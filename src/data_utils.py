@@ -1,10 +1,16 @@
 from pathlib import Path
+from typing import TypedDict
+
+
+class SubsetAndPath(TypedDict):
+    subset: str
+    path: Path
 
 
 def _iter_dataset_dir(
     datadir: Path | str,
     ignoredir_pref="__",
-    valid_subsets = {"train", "test", "dev"},
+    valid_subsets={"train", "test", "dev"},
 ):
 
     if isinstance(datadir, str):
@@ -13,10 +19,11 @@ def _iter_dataset_dir(
 
     for dir_ in sorted(datadir.iterdir(), key=lambda dir_: dir_.name):
 
-        ## Ignore root files and dirs starting with ignoredir_pref
-        if not dir_.is_dir() or dir_.name.startswith(ignoredir_pref): continue
+        # Ignore root files and dirs starting with ignoredir_pref
+        if not dir_.is_dir() or dir_.name.startswith(ignoredir_pref):
+            continue
 
-        ## Delete all splits with weird naming
+        # Delete all splits with weird naming
         children = [
             subdir_ for subdir_ in dir_.iterdir()
             if subdir_.name in valid_subsets and subdir_.is_dir()
@@ -29,7 +36,7 @@ def _iter_dataset_dir(
 def get_train_dev_test_paths(datadir: Path | str,):
     it = _iter_dataset_dir(datadir)
 
-    splits = {
+    splits: dict[str, list[SubsetAndPath]] = {
         "train": [],
         "test": [],
         "dev": [],

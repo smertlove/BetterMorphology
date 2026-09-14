@@ -1,5 +1,4 @@
 from torch.utils.data import IterableDataset
-import torch
 from .data_utils import SubsetAndPath
 from conllu import parse_incr, TokenList
 import random
@@ -12,9 +11,9 @@ class PosAndMorphologyDataset(IterableDataset[dict[str, TokenList]]):
     def __init__(
         self,
         subsets_paths: list[SubsetAndPath],
-        debug_fit:bool=False,
-        shuffle:bool=False,
-        bufsize:int=10000,
+        debug_fit: bool = False,
+        shuffle: bool = False,
+        bufsize: int = 10000,
     ):
         super().__init__()
 

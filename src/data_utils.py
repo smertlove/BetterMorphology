@@ -9,8 +9,8 @@ class SubsetAndPath(TypedDict):
 
 def _iter_dataset_dir(
     datadir: Path | str,
-    ignoredir_pref: str="__",
-    valid_subsets: set[str]={"train", "test", "dev"},
+    ignoredir_pref: str = "__",
+    valid_subsets: set[str] = {"train", "test", "dev"},
 ) -> Iterator[tuple[str, str, Path]]:
 
     if isinstance(datadir, str):

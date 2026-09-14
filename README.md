@@ -2,7 +2,7 @@
 ## Linters
 
 ```bash
-mypy --python-executable .venv/bin/python src/
+mypy --strict --python-executable .venv/bin/python src/
 ```
 
 ```bash

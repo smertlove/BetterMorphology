@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, Iterator
 
 
 class SubsetAndPath(TypedDict):
@@ -9,9 +9,9 @@ class SubsetAndPath(TypedDict):
 
 def _iter_dataset_dir(
     datadir: Path | str,
-    ignoredir_pref="__",
-    valid_subsets={"train", "test", "dev"},
-):
+    ignoredir_pref: str="__",
+    valid_subsets: set[str]={"train", "test", "dev"},
+) -> Iterator[tuple[str, str, Path]]:
 
     if isinstance(datadir, str):
         datadir = Path(datadir)
@@ -33,7 +33,7 @@ def _iter_dataset_dir(
             yield dir_.name, child.name, child
 
 
-def get_train_dev_test_paths(datadir: Path | str,):
+def get_train_dev_test_paths(datadir: Path | str,) -> dict[str, list[SubsetAndPath]]:
     it = _iter_dataset_dir(datadir)
 
     splits: dict[str, list[SubsetAndPath]] = {

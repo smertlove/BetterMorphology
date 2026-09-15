@@ -52,7 +52,8 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
     def _debug_repeat(self, sentences: Iterator[TokenList]) -> Iterator[TokenList]:
         """Infinitely repeats the first sentence for model fitting debug."""
-        sentence = next(sentences)
+        sentence = next(sentences, None)
+        if sentence is None: return
         while True:
             yield deepcopy(sentence)
 
@@ -73,8 +74,7 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
         """Prepares actual model inputs and labels"""
-        yield sentence
-        # raise NotImplementedError
+        raise NotImplementedError
 
     def _get_sentence_as_string(self, sentence: TokenList) -> str:
         return sentence.metadata['text']
@@ -133,16 +133,16 @@ class LemmatizationDataset(BaseConlluDataset):
             return_tensors=None,
             is_split_into_words=True,
         )
+        encoder_word_ids = encoder_input.word_ids()
         encoder_input = {k+"_encoder": val for k, val in encoder_input.items()}
 
-        for token in sentence:
+        for current_word_idx, token in enumerate(sentence):
 
-            # TODO: define which tokens in the encoder input correspond to current lemma (make a mask)
+            context_mask = [1 if wid == current_word_idx else 0 for wid in encoder_word_ids]
 
             decoder_input = self.decoder_tokenizer(
                 token['form'],
                 return_tensors=None,
-                is_split_into_words=False,  # Токенизируем только форму
             )
             decoder_input = {k + "_decoder": val for k, val in decoder_input.items()}
 
@@ -151,6 +151,7 @@ class LemmatizationDataset(BaseConlluDataset):
             yield TaskDefinedBatch(
                 task_name="lemmatization",
                 labels=labels,
+                encoder_context_mask=context_mask,
                 **encoder_input,
                 **decoder_input,
             )

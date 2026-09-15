@@ -7,12 +7,16 @@ from typing import Iterator
 from transformers import PreTrainedTokenizer
 from collections import UserDict
 from .categories import UPOS2ID, UNDEFINED
+from uuid import uuid4
 
 
 class TaskDefinedBatch(UserDict[str, list[int]]):
     def __init__(self, task_name: str, **kwargs: list[int]):
         super().__init__(kwargs)
         self.task_name: str = task_name
+
+
+IGNORE_INDEX = -100
 
 
 class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
@@ -109,7 +113,7 @@ class PosAndMorphologyDataset(BaseConlluDataset):
 
         for word_idx in word_ids:
             if word_idx is None:
-                aligned_labels.append(-100)
+                aligned_labels.append(IGNORE_INDEX)
             else:
                 aligned_labels.append(pos_tags[word_idx])
 
@@ -132,7 +136,7 @@ class LemmatizationDataset(BaseConlluDataset):
             is_split_into_words=True,
         )
         encoder_word_ids = encoder_input.word_ids()
-        encoder_input = {k+"_encoder": val for k, val in encoder_input.items()}
+        encoder_input = {k + "_encoder": val for k, val in encoder_input.items()}
 
         for current_word_idx, token in enumerate(sentence):
 
@@ -146,10 +150,11 @@ class LemmatizationDataset(BaseConlluDataset):
 
             labels = self.decoder_tokenizer.encode(token['lemma'])
 
+            # TODO: Add uuid4 to avoid embedding exact same sentence len(tokens) times 
             yield TaskDefinedBatch(
                 task_name="lemmatization",
                 labels=labels,
                 encoder_context_mask=context_mask,
-                **encoder_input,
+                **encoder_input,  # same for every word in the sentence, pull contextualized vectors from here
                 **decoder_input,
             )

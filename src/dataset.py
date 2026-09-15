@@ -3,7 +3,7 @@ from .data_utils import SubsetAndPath
 from conllu import parse_incr, TokenList
 import random
 from copy import deepcopy
-from typing import Iterator, TypedDict
+from typing import Iterator
 from transformers import PreTrainedTokenizer
 from collections import UserDict
 from .categories import UPOS2ID, UNDEFINED
@@ -53,7 +53,8 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
     def _debug_repeat(self, sentences: Iterator[TokenList]) -> Iterator[TokenList]:
         """Infinitely repeats the first sentence for model fitting debug."""
         sentence = next(sentences, None)
-        if sentence is None: return
+        if sentence is None:
+            return
         while True:
             yield deepcopy(sentence)
 
@@ -75,9 +76,6 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
         """Prepares actual model inputs and labels"""
         raise NotImplementedError
-
-    def _get_sentence_as_string(self, sentence: TokenList) -> str:
-        return sentence.metadata['text']
 
     def __iter__(self) -> Iterator[TaskDefinedBatch]:
 

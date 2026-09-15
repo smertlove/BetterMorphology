@@ -73,10 +73,11 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
         """Prepares actual model inputs and labels"""
-        raise NotImplementedError
+        yield sentence
+        # raise NotImplementedError
 
     def _get_sentence_as_string(self, sentence: TokenList) -> str:
-        return " ".join([token['form'] for token in sentence])
+        return sentence.metadata['text']
 
     def __iter__(self) -> Iterator[TaskDefinedBatch]:
 
@@ -96,18 +97,28 @@ class PosAndMorphologyDataset(BaseConlluDataset):
 
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
 
-        sentence_str = self._get_sentence_as_string(sentence)
+        words = [token['form'] for token in sentence]
+        pos_tags = [UPOS2ID.get(token['upos'], UPOS2ID[UNDEFINED]) for token in sentence]
+
+        encoder_inputs = self.encoder_tokenizer(
+            words,
+            return_tensors=None,
+            is_split_into_words=True,
+        )
+
+        word_ids = encoder_inputs.word_ids()
+        aligned_labels = []
+
+        for word_idx in word_ids:
+            if word_idx is None:
+                aligned_labels.append(-100)
+            else:
+                aligned_labels.append(pos_tags[word_idx])
 
         yield TaskDefinedBatch(
             task_name="pos+morphology",
-            labels=[
-                UPOS2ID.get(
-                    token['upos'],
-                    UPOS2ID[UNDEFINED],
-                )
-                for token in sentence
-            ],
-            **self.encoder_tokenizer(sentence_str)
+            labels=aligned_labels,
+            **encoder_inputs
         )
 
 
@@ -115,23 +126,31 @@ class LemmatizationDataset(BaseConlluDataset):
 
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
 
-        sentence_str = self._get_sentence_as_string(sentence)
+        words = [token['form'] for token in sentence]
 
-        encoder_inputs = self.encoder_tokenizer(sentence_str)
-        encoder_inputs = {k+"_encoder": val for k, val in encoder_inputs.items()}
+        encoder_input = self.encoder_tokenizer(
+            words,
+            return_tensors=None,
+            is_split_into_words=True,
+        )
+        encoder_input = {k+"_encoder": val for k, val in encoder_input.items()}
 
         for token in sentence:
 
             # TODO: define which tokens in the encoder input correspond to current lemma (make a mask)
 
-            decoder_inputs = self.decoder_tokenizer(token['form'])
-            decoder_inputs = {k + "_decoder": val for k, val in decoder_inputs.items()}
+            decoder_input = self.decoder_tokenizer(
+                token['form'],
+                return_tensors=None,
+                is_split_into_words=False,  # Токенизируем только форму
+            )
+            decoder_input = {k + "_decoder": val for k, val in decoder_input.items()}
 
             labels = self.decoder_tokenizer.encode(token['lemma'])
 
             yield TaskDefinedBatch(
                 task_name="lemmatization",
                 labels=labels,
-                **encoder_inputs,
-                **decoder_inputs,
+                **encoder_input,
+                **decoder_input,
             )

@@ -30,5 +30,5 @@ UPOSES = (
     'X'
 )
 
-UPOS2ID = {upos: idx for idx, upos in enumerate(UPOSES)}
-ID2UPOS = {idx: upos for upos, idx in UPOS2ID.items()}
+UPOS2ID: dict[str, int] = {upos: idx for idx, upos in enumerate(UPOSES)}
+ID2UPOS: dict[int, str] = {idx: upos for upos, idx in UPOS2ID.items()}

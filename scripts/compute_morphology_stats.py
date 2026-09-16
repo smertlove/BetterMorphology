@@ -1,6 +1,6 @@
 # type: ignore
 
-# Автоматически собранные файлы outliers.json и heuristics.json правятся вручную.
+# Автоматически собранные файлы должны правиться вручную.
 raise Exception("Подумай трижды, прежде чем запускать это, путник...")
 
 from src.dataset import BaseConlluDataset

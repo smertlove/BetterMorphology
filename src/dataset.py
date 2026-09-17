@@ -6,11 +6,11 @@ from copy import deepcopy
 from typing import Iterator
 from transformers import PreTrainedTokenizer
 from collections import UserDict
-from uuid import uuid4
 
 from .categories import (
 UNDEFINED,
-
+name2mapping_to_id,
+names_order,
 )
 
 
@@ -99,12 +99,58 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
             yield from self._prepare_model_input(sentence)
 
 
+def transform_features(features):
+    new_features = deepcopy(features)
+
+    if features["upos"] is None:  ## Change upos == None to X just in case
+        new_features["upos"] = "X"
+
+    if features.get("Case") == "Par":  ## Equal in Russian, Gen2 more frequent in corpus
+        new_features["Case"] = "Gen2"
+
+    if features.get("Case") == "Nom1":  ## probably markup mistake
+        new_features["Case"] = "Nom"
+
+    if features.get("Voice") == "Act,Pass":  ## looked at the corpus, looks like its Mid in both cases (there are only 2)
+        new_features["Voice"] = "Mid"
+
+    if features.get("Clitic") == "Yes":  ## just 1 occurrence in whole corpus, can remove
+        del new_features["Clitic"]
+
+    return new_features
+
+
+def get_vector_from_features(feats: dict[str, str], ignore_this=False):
+
+    if ignore_this:
+        vector = [IGNORE_INDEX] * len(names_order)
+
+    else:
+        vector = []
+        for name in names_order:
+            mapping = name2mapping_to_id[name]
+            val = feats.get(name, UNDEFINED)
+            val_id = mapping[val]
+            vector.append(val_id)
+
+    return vector
+
+
 class PosAndMorphologyDataset(BaseConlluDataset):
 
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
 
         words = [token['form'] for token in sentence]
-        pos_tags = [UPOS2ID.get(token['upos'], UPOS2ID[UNDEFINED]) for token in sentence]
+        all_feats = []
+        for token in sentence:
+
+            # add upos as a regular feature for convenience, then preprocess features
+            upos = token["upos"]
+            feats = token['feats'] or dict()
+            feats['upos'] = upos
+            feats = transform_features(feats)
+
+            all_feats.append(feats)
 
         encoder_inputs = self.encoder_tokenizer(
             words,
@@ -117,9 +163,9 @@ class PosAndMorphologyDataset(BaseConlluDataset):
 
         for word_idx in word_ids:
             if word_idx is None:
-                aligned_labels.append(IGNORE_INDEX)
+                aligned_labels.append(get_vector_from_features(dict(), ignore_this=True))
             else:
-                aligned_labels.append(pos_tags[word_idx])
+                aligned_labels.append(get_vector_from_features(all_feats[word_idx], ignore_this=False))
 
         yield TaskDefinedBatch(
             task_name="pos+morphology",

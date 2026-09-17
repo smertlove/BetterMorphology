@@ -49,7 +49,7 @@ class FeaturesExtractor(BaseConlluDataset):
     def _prepare_model_input(self, sentence):
       for token in sentence:
             feats = transform_features(token['feats'] or dict())
-            upos = token["upos"]
+            upos = token["upos"] or "X"
             if not (
                 (upos is None)
                 or

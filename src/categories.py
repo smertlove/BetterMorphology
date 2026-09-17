@@ -269,3 +269,32 @@ name2mapping_from_id = {
     "Foreign": ID2FOREIGN,
     "Hyph": ID2HYPH,
 }
+
+
+names_order = (
+    "upos",
+    "Animacy",
+    "Case",
+    "Gender",
+    "Number",
+    "NameType",
+    "Aspect",
+    "Mood",
+    "Tense",
+    "Transit",
+    "VerbForm",
+    "Voice",
+    "Degree",
+    "Person",
+    "NumForm",
+    "NumType",
+    "Variant",
+    "PronType",
+    "Abbr",
+    "Poss",
+    "InflClass",
+    "Reflex",
+    "Polarity",
+    "Foreign",
+    "Hyph",
+)

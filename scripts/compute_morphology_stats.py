@@ -1,7 +1,7 @@
 # type: ignore
 
 # Автоматически собранные файлы должны правиться вручную.
-raise Exception("Подумай трижды, прежде чем з`апускать это, путник...")
+raise Exception("Подумай трижды, прежде чем запускать это, путник...")
 
 from src.dataset import BaseConlluDataset
 from src.data_utils import get_train_dev_test_paths

@@ -8,7 +8,6 @@ UNDEFINED = "[UNDEFINED]"
 
 
 UPOS2ID, ID2UPOS = get_id_mappings(
-    UNDEFINED,
     "ADJ",
     "ADP",
     "ADV",

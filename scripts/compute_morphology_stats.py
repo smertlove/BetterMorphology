@@ -87,7 +87,7 @@ for upos, feats in upos2feats.items():
 
         values[UNDEFINED] = sum_undefined
 
-
+# Pad features not observed per upos
 for upos, feats in upos2feats.items():
     for feat, obs_vals in feats.items():
         vals = feat_freqs[feat]

@@ -1,7 +1,7 @@
 # type: ignore
 
 # Автоматически собранные файлы должны правиться вручную.
-raise Exception("Подумай трижды, прежде чем запускать это, путник...")
+# raise Exception("Подумай трижды, прежде чем запускать это, путник...")
 
 from src.dataset import BaseConlluDataset
 from src.data_utils import get_train_dev_test_paths
@@ -78,6 +78,7 @@ for upos, feats in iter(dataset):
 
 print(f"{tot} tokens processed")
 
+
 # Compute undefined features per upos
 for upos, feats in upos2feats.items():
     for feat, values in feats.items():
@@ -85,6 +86,15 @@ for upos, feats in upos2feats.items():
         sum_undefined = upos_freqs[upos] - sum_defined
 
         values[UNDEFINED] = sum_undefined
+
+
+for upos, feats in upos2feats.items():
+    for feat, obs_vals in feats.items():
+        vals = feat_freqs[feat]
+        for val in vals:
+            if val not in obs_vals:
+                obs_vals[val] = 0
+
 
 ## Define heuristics: 
 

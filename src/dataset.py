@@ -6,8 +6,12 @@ from copy import deepcopy
 from typing import Iterator
 from transformers import PreTrainedTokenizer
 from collections import UserDict
-from .categories import UPOS2ID, UNDEFINED
 from uuid import uuid4
+
+from .categories import (
+UNDEFINED,
+
+)
 
 
 class TaskDefinedBatch(UserDict[str, list[int]]):

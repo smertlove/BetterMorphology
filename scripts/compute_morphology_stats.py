@@ -113,7 +113,7 @@ for upos, feats in upos2feats.items():
                     if count < FREQ_THR:
                         warnings[upos][feat][val] = f"{count} / {sum(vals.values())}"
 
-upos2feats["UPOS"] = upos_freqs
+upos2feats["upos"] = upos_freqs
 
 with open(OUT_FILE_per_upos_freqs, "w", encoding="utf-8") as file:
     json.dump(upos2feats, file, ensure_ascii=False, indent=2)

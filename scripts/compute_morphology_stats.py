@@ -1,22 +1,24 @@
 # type: ignore
 
 # Автоматически собранные файлы должны правиться вручную.
-raise Exception("Подумай трижды, прежде чем запускать это, путник...")
+raise Exception("Подумай трижды, прежде чем з`апускать это, путник...")
 
 from src.dataset import BaseConlluDataset
 from src.data_utils import get_train_dev_test_paths
 from collections import defaultdict
 import json
 from pathlib import Path
+from copy import deepcopy
 
 CURDIR = Path(__file__).parent.resolve()
 DATADIR = CURDIR / "data"
 DATADIR.mkdir(exist_ok=True)
 
-OUT_FILE_freqs = DATADIR / "freqs.json"
+OUT_FILE_per_upos_freqs = DATADIR / "freqs_per_upos.json"
+OUT_FILE_per_feat_freqs = DATADIR / "freqs_per_feat.json"
 OUT_FILE_heuristics = DATADIR / "heuristics.json"
 OUT_FILE_warnings = DATADIR / "warnings.json"
-FREQ_THR = 30
+FREQ_THR = 5
 DATA_PATH = "/mnt/data_storage/datasets/conllu/rubic_data-master"
 UNDEFINED = "[UND]"
 
@@ -24,11 +26,29 @@ UNDEFINED = "[UND]"
 splits = get_train_dev_test_paths(DATA_PATH)
 
 
+def transform_features(features):
+    new_features = deepcopy(features)
+
+    if features.get("Case") == "Par":  ## Equal in Russian, Gen2 more frequent in corpus
+        new_features["Case"] = "Gen2"
+
+    if features.get("Case") == "Nom1":  ## probably markup mistake
+        new_features["Case"] = "Nom"
+
+    if features.get("Voice") == "Act,Pass":  ## looked at the corpus, looks like its Mid in both cases (there are only 2)
+        new_features["Voice"] = "Mid"
+
+    if features.get("Clitic") == "Yes":  ## just 1 occurrence in whole corpus, can remove
+        del new_features["Clitic"]
+
+    return new_features
+
+
 class FeaturesExtractor(BaseConlluDataset):
 
     def _prepare_model_input(self, sentence):
       for token in sentence:
-            feats = token['feats'] or dict()
+            feats = transform_features(token['feats'] or dict())
             upos = token["upos"]
             if not (
                 (upos is None)
@@ -45,6 +65,7 @@ dataset = FeaturesExtractor(splits["train"], None, None)
 
 upos2feats = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
 upos_freqs = defaultdict(int)
+feat_freqs = defaultdict(lambda: defaultdict(int))
 tot = 0
 
 # Compute upos freqs and features freqs per upos
@@ -53,6 +74,9 @@ for upos, feats in iter(dataset):
     upos_freqs[upos] += 1
     for feat, val in feats.items():
         upos2feats[upos][feat][val] += 1
+        feat_freqs[feat][val] += 1
+
+print(f"{tot} tokens processed")
 
 # Compute undefined features per upos
 for upos, feats in upos2feats.items():
@@ -79,9 +103,13 @@ for upos, feats in upos2feats.items():
                     if count < FREQ_THR:
                         warnings[upos][feat][val] = f"{count} / {sum(vals.values())}"
 
+feat_freqs["UPOS"] = upos_freqs
 
-with open(OUT_FILE_freqs, "w", encoding="utf-8") as file:
+with open(OUT_FILE_per_upos_freqs, "w", encoding="utf-8") as file:
     json.dump(upos2feats, file, ensure_ascii=False, indent=2)
+
+with open(OUT_FILE_per_feat_freqs, "w", encoding="utf-8") as file:
+    json.dump(feat_freqs, file, ensure_ascii=False, indent=2)
 
 with open(OUT_FILE_heuristics, "w", encoding="utf-8") as file:
     json.dump(heuristics, file, ensure_ascii=False, indent=2)

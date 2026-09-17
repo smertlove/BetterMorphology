@@ -4,7 +4,7 @@ def get_id_mappings(*elements: str) -> tuple[dict[str, int], dict[int, str]]:
     return elem2id, id2elem
 
 
-UNDEFINED = "[UNDEFINED]"
+UNDEFINED = "[UND]"
 
 
 UPOS2ID, ID2UPOS = get_id_mappings(

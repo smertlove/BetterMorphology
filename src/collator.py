@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     sample1 = TaskDefinedBatch("some_task", **{
         'labels': [[0, 0], [0, 0], [0, 0]],
-        'input_ids': [1, 2, 3,],
+        'input_ids': [1, 2, 3, ],
         'token_type_ids': [0, 0, 0],
         'attention_mask': [1, 1, 1],
     })
@@ -148,12 +148,88 @@ if __name__ == "__main__":
         'attention_mask': [1, 1, 1, 1, 1],
     })
 
-    print(
-        collator(
-            [sample1, sample2]
-        )
+    print("=== PosAndMorphologyCollator ===")
+    print(collator([sample1, sample2]))
+
+    # ----- LemmatizationCollator -----
+    collator2 = LemmatizationCollator(
+        encoder_pad_token_id=0,
+        decoder_pad_token_id=22,
+        ignore_index_id=100,
     )
 
+    # Two samples share the SAME sentence_uuid -> should collapse into one
+    # unique encoder input. The third sample has its own context.
+    #
+    # Sample A: context len 3, decoder len 2, labels len 2
+    # Sample B: context len 3 (same uuid as A), decoder len 3, labels len 3
+    # Sample C: context len 5 (own uuid), decoder len 1, labels len 1
+    sampleA = TaskDefinedBatch("lemma_task", **{
+        'sentence_uuid': "uuid-A",
+        'input_ids_encoder': [10, 11, 12],
+        'token_type_ids_encoder': [0, 0, 0],
+        'attention_mask_encoder': [1, 1, 1],
+        'encoder_context_mask': [1, 1, 0],
+        'input_ids_decoder': [20, 21],
+        'token_type_ids_decoder': [0, 0],
+        'attention_mask_decoder': [1, 1],
+        'labels': [30, 31],
+    })
 
-    collator2 = LemmatizationCollator(encoder_pad_token_id=0, decoder_pad_token_id=22, ignore_index_id=100)
-    ## ADD TESTS
+    sampleB = TaskDefinedBatch("lemma_task", **{
+        'sentence_uuid': "uuid-A",          # same context as A
+        'input_ids_encoder': [10, 11, 12],
+        'token_type_ids_encoder': [0, 0, 0],
+        'attention_mask_encoder': [1, 1, 1],
+        'encoder_context_mask': [0, 0, 1],
+        'input_ids_decoder': [20, 21, 22],
+        'token_type_ids_decoder': [0, 0, 0],
+        'attention_mask_decoder': [1, 1, 1],
+        'labels': [30, 31, 32],
+    })
+
+    sampleC = TaskDefinedBatch("lemma_task", **{
+        'sentence_uuid': "uuid-C",          # different, longer context
+        'input_ids_encoder': [40, 41, 42, 43, 44],
+        'token_type_ids_encoder': [0, 0, 0, 0, 0],
+        'attention_mask_encoder': [1, 1, 1, 1, 1],
+        'encoder_context_mask': [0, 0, 1, 0, 0],
+        'input_ids_decoder': [50],
+        'token_type_ids_decoder': [0],
+        'attention_mask_decoder': [1],
+        'labels': [60],
+    })
+
+    batch = collator2([sampleA, sampleB, sampleC])
+
+    print("\n=== LemmatizationCollator ===")
+    for k, v in batch.items():
+        if k == "task_name":
+            print(f"{k}: {v}")
+        else:
+            print(f"{k}: shape={tuple(v.shape)}\n{v}\n")
+
+    # ---- Sanity checks ----
+    assert batch["input_ids_encoder"].shape[0] == 2, \
+        "Expected 2 unique contexts (uuid-A, uuid-C)"
+
+    # sample2uniq_id should map A,B -> 0 and C -> 1 (or the other way),
+    # but the two samples sharing uuid-A must map to the SAME index.
+    s2u = batch["sample2uniq_id"].tolist()
+    assert s2u[0] == s2u[1], f"A and B must share a unique id, got {s2u}"
+    assert s2u[2] != s2u[0], f"C must have its own id, got {s2u}"
+
+    # Contexts padded to the longest unique context (len 5)
+    assert batch["input_ids_encoder"].shape == (2, 5)
+    assert batch["encoder_context_mask"].shape == (3, 5)
+
+    # Decoder padded to the longest decoder input (len 3 from sample B)
+    assert batch["input_ids_decoder"].shape == (3, 3)
+
+    # Labels padded to the longest labels (len 3 from sample B),
+    # and short ones filled with ignore_index_id=100
+    assert batch["labels"].shape == (3, 3)
+    assert batch["labels"][2, 1].item() == 100.0, \
+        f"Expected ignore index padding, got {batch['labels'][2]}"
+
+    print("All LemmatizationCollator checks passed.")

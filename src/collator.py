@@ -36,9 +36,9 @@ class PosAndMorphologyCollator:
 
         ignore_labels_vector = [self.ignore_index_id] * labels_vector_len
 
-        padded_lables = _pad_sequence([sample["labels"] for sample in samples], ignore_labels_vector, maxlen, torch.float)
+        padded_lables = _pad_sequence([sample["labels"] for sample in samples], ignore_labels_vector, maxlen, torch.long)
         padded_input_ids = _pad_sequence([sample['input_ids'] for sample in samples], self.pad_token_id, maxlen, torch.long)
-        padded_token_type_ids = _pad_sequence([sample['token_type_ids'] for sample in samples], self.pad_token_id, maxlen, torch.long)
+        padded_token_type_ids = _pad_sequence([sample['token_type_ids'] for sample in samples], 0, maxlen, torch.long)
         padded_attention_mask = _pad_sequence([sample['attention_mask'] for sample in samples], 0, maxlen, torch.long)
 
         result = {
@@ -101,17 +101,17 @@ class LemmatizationCollator:
         label_maxlen = max(len(sample["labels"]) for sample in samples)
 
         padded_uniq_input_ids_encoder = _pad_sequence(uniq_input_ids_encoder, self.encoder_pad_token_id, context_maxlen, torch.long)
-        padded_uniq_token_type_ids_encoder = _pad_sequence(uniq_token_type_ids_encoder, self.encoder_pad_token_id, context_maxlen, torch.long)
+        padded_uniq_token_type_ids_encoder = _pad_sequence(uniq_token_type_ids_encoder, 0, context_maxlen, torch.long)
         padded_uniq_attention_mask_encoder = _pad_sequence(uniq_attention_mask_encoder, 0, context_maxlen, torch.long)
         padded_encoder_context_mask = _pad_sequence([sample["encoder_context_mask"] for sample in samples], 0, context_maxlen, torch.long)
 
         padded_input_ids_decoder = _pad_sequence([sample["input_ids_decoder"] for sample in samples],
                                                  self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
         padded_token_type_ids_decoder = _pad_sequence([sample["token_type_ids_decoder"] for sample in samples],
-                                                      self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
+                                                      0, decoder_input_maxlen, torch.long)
         padded_attention_mask_decoder = _pad_sequence([sample["attention_mask_decoder"] for sample in samples], 0, decoder_input_maxlen, torch.long)
 
-        padded_labels = _pad_sequence([sample["labels"] for sample in samples], self.ignore_index_id, label_maxlen, torch.float)
+        padded_labels = _pad_sequence([sample["labels"] for sample in samples], self.ignore_index_id, label_maxlen, torch.long)
 
         result = {
             'labels': padded_labels,
@@ -153,3 +153,7 @@ if __name__ == "__main__":
             [sample1, sample2]
         )
     )
+
+
+    collator2 = LemmatizationCollator(encoder_pad_token_id=0, decoder_pad_token_id=22, ignore_index_id=100)
+    ## ADD TESTS

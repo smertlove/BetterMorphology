@@ -1,9 +1,10 @@
 from torch.utils.data import IterableDataset
+import torch
 from .data_utils import SubsetAndPath
 from conllu import parse_incr, TokenList
 import random
 from copy import deepcopy
-from typing import Iterator
+from typing import Iterator, TypeVar, Generic
 from transformers import PreTrainedTokenizer
 from collections import UserDict
 
@@ -13,9 +14,10 @@ name2mapping_to_id,
 names_order,
 )
 
+T = TypeVar("T", list[int], torch.Tensor)
 
-class TaskDefinedBatch(UserDict[str, list[int]]):
-    def __init__(self, task_name: str, **kwargs: list[int]):
+class TaskDefinedBatch(UserDict[str, T], Generic[T]):
+    def __init__(self, task_name: str, **kwargs: T):
         super().__init__(kwargs)
         self.task_name: str = task_name
 

@@ -3,7 +3,6 @@ from typing import Any, cast
 from .dataset import TaskDefinedBatch, IGNORE_INDEX
 
 
-
 def _get_taskname_or_error(samples: list[TaskDefinedBatch]) -> str:
     distinct_tasks = {sample.task_name for sample in samples}
     assert len(distinct_tasks) == 1, f"Differrent task types in batch: {distinct_tasks}"
@@ -106,8 +105,10 @@ class LemmatizationCollator:
         padded_uniq_attention_mask_encoder = _pad_sequence(uniq_attention_mask_encoder, 0, context_maxlen, torch.long)
         padded_encoder_context_mask = _pad_sequence([sample["encoder_context_mask"] for sample in samples], 0, context_maxlen, torch.long)
 
-        padded_input_ids_decoder = _pad_sequence([sample["input_ids_decoder"] for sample in samples], self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
-        padded_token_type_ids_decoder = _pad_sequence([sample["token_type_ids_decoder"] for sample in samples], self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
+        padded_input_ids_decoder = _pad_sequence([sample["input_ids_decoder"] for sample in samples],
+                                                 self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
+        padded_token_type_ids_decoder = _pad_sequence([sample["token_type_ids_decoder"] for sample in samples],
+                                                      self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
         padded_attention_mask_decoder = _pad_sequence([sample["attention_mask_decoder"] for sample in samples], 0, decoder_input_maxlen, torch.long)
 
         padded_labels = _pad_sequence([sample["labels"] for sample in samples], self.ignore_index_id, label_maxlen, torch.float)
@@ -128,7 +129,6 @@ class LemmatizationCollator:
             task_name=task_name,
             **result
         )
-
 
 
 if __name__ == "__main__":

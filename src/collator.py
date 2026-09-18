@@ -4,11 +4,11 @@ from .dataset import TaskDefinedBatch, IGNORE_INDEX
 
 class PosAndMorphologyDataCollator:
 
-    def __init__(self, pad_token_id, ignore_index_id):
+    def __init__(self, pad_token_id: int, ignore_index_id: int):
         self.pad_token_id = pad_token_id
         self.ignore_index_id = ignore_index_id
 
-    def __call__(self, samples: list[TaskDefinedBatch]):
+    def __call__(self, samples: list[TaskDefinedBatch]) -> TaskDefinedBatch:
 
         distinct_tasks = {sample.task_name for sample in samples}
         assert len(distinct_tasks) == 1, f"Differrent task types in batch: {distinct_tasks}"

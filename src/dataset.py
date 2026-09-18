@@ -4,7 +4,7 @@ from .data_utils import SubsetAndPath
 from conllu import parse_incr, TokenList
 import random
 from copy import deepcopy
-from typing import Iterator, TypeVar, Generic
+from typing import Iterator, TypeVar, Generic, cast, Union, Any
 from transformers import PreTrainedTokenizer
 from collections import UserDict
 
@@ -14,11 +14,14 @@ name2mapping_to_id,
 names_order,
 )
 
-T = TypeVar("T", list[int], torch.Tensor)
 
-class TaskDefinedBatch(UserDict[str, T], Generic[T]):
-    def __init__(self, task_name: str, **kwargs: T):
-        super().__init__(kwargs)
+SomeTensor = Union[list[int], list[list[int]], torch.Tensor]
+
+class TaskDefinedBatch(UserDict[str, Any]):
+    def __init__(self, task_name: str, **kwargs: Any):
+        super().__init__(**kwargs)
+        for key, value in kwargs.items():
+            self[key] = value
         self.task_name: str = task_name
 
 
@@ -101,7 +104,7 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
             yield from self._prepare_model_input(sentence)
 
 
-def transform_features(features):
+def transform_features(features: dict[str, str]) -> dict[str, str]:
     new_features = deepcopy(features)
 
     if features["upos"] is None:  ## Change upos == None to X just in case
@@ -122,7 +125,7 @@ def transform_features(features):
     return new_features
 
 
-def get_vector_from_features(feats: dict[str, str], ignore_this=False):
+def get_vector_from_features(feats: dict[str, str], ignore_this:bool=False) -> list[int]:
 
     if ignore_this:
         vector = [IGNORE_INDEX] * len(names_order)

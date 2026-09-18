@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Iterator, Any
 from transformers import PreTrainedTokenizer
 from collections import UserDict
+from uuid import uuid4
 
 from .categories import (
     UNDEFINED,
@@ -181,6 +182,7 @@ class LemmatizationDataset(BaseConlluDataset):
     def _prepare_model_input(self, sentence: TokenList) -> Iterator[TaskDefinedBatch]:
 
         words = [token['form'] for token in sentence]
+        cur_uuid = uuid4()
 
         encoder_input = self.encoder_tokenizer(
             words,
@@ -205,6 +207,7 @@ class LemmatizationDataset(BaseConlluDataset):
             # TODO: Add uuid4 to avoid embedding exact same sentence len(tokens) times
             yield TaskDefinedBatch(
                 task_name="lemmatization",
+                sentence_uuid=cur_uuid,
                 labels=labels,
                 encoder_context_mask=context_mask,
                 **encoder_input,  # same for every word in the sentence, pull contextualized vectors from here

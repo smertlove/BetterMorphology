@@ -1,21 +1,18 @@
 from torch.utils.data import IterableDataset
-import torch
 from .data_utils import SubsetAndPath
 from conllu import parse_incr, TokenList
 import random
 from copy import deepcopy
-from typing import Iterator, TypeVar, Generic, cast, Union, Any
+from typing import Iterator, Any
 from transformers import PreTrainedTokenizer
 from collections import UserDict
 
 from .categories import (
-UNDEFINED,
-name2mapping_to_id,
-names_order,
+    UNDEFINED,
+    name2mapping_to_id,
+    names_order,
 )
 
-
-SomeTensor = Union[list[int], list[list[int]], torch.Tensor]
 
 class TaskDefinedBatch(UserDict[str, Any]):
     def __init__(self, task_name: str, **kwargs: Any):
@@ -107,25 +104,25 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 def transform_features(features: dict[str, str]) -> dict[str, str]:
     new_features = deepcopy(features)
 
-    if features["upos"] is None:  ## Change upos == None to X just in case
+    if features["upos"] is None:  # Change upos == None to X just in case
         new_features["upos"] = "X"
 
-    if features.get("Case") == "Par":  ## Equal in Russian, Gen2 more frequent in corpus
+    if features.get("Case") == "Par":  # Equal in Russian, Gen2 more frequent in corpus
         new_features["Case"] = "Gen2"
 
-    if features.get("Case") == "Nom1":  ## probably markup mistake
+    if features.get("Case") == "Nom1":  # probably markup mistake
         new_features["Case"] = "Nom"
 
-    if features.get("Voice") == "Act,Pass":  ## looked at the corpus, looks like its Mid in both cases (there are only 2)
+    if features.get("Voice") == "Act,Pass":  # looked at the corpus, looks like its Mid in both cases (there are only 2)
         new_features["Voice"] = "Mid"
 
-    if features.get("Clitic") == "Yes":  ## just 1 occurrence in whole corpus, can remove
+    if features.get("Clitic") == "Yes":  # just 1 occurrence in whole corpus, can remove
         del new_features["Clitic"]
 
     return new_features
 
 
-def get_vector_from_features(feats: dict[str, str], ignore_this:bool=False) -> list[int]:
+def get_vector_from_features(feats: dict[str, str], ignore_this: bool = False) -> list[int]:
 
     if ignore_this:
         vector = [IGNORE_INDEX] * len(names_order)
@@ -205,7 +202,7 @@ class LemmatizationDataset(BaseConlluDataset):
 
             labels = self.decoder_tokenizer.encode(token['lemma'])
 
-            # TODO: Add uuid4 to avoid embedding exact same sentence len(tokens) times 
+            # TODO: Add uuid4 to avoid embedding exact same sentence len(tokens) times
             yield TaskDefinedBatch(
                 task_name="lemmatization",
                 labels=labels,

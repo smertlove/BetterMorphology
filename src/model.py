@@ -2,11 +2,12 @@ from .dataset import TaskDefinedBatch
 from torch import nn
 import torch
 from transformers import AutoModel
+from typing import Any
 
 
 class MorphologyClassifier(nn.Module):
 
-    def __init__(self, names_order, name2mapping_from_id, encoder_id, *args, **kwargs):
+    def __init__(self, names_order: tuple[str, ...], name2mapping_from_id: dict[str, dict[int, str]], encoder_id: str, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self.names_order = names_order
@@ -28,7 +29,7 @@ class MorphologyClassifier(nn.Module):
         token_type_ids: torch.Tensor,
         attention_mask: torch.Tensor,
         labels: torch.Tensor | None,
-    ):
+    ) -> dict[str, dict[str, torch.Tensor]]:
         x = self.encoder(
             input_ids=input_ids,
             token_type_ids=token_type_ids,
@@ -59,7 +60,7 @@ class MorphologyClassifier(nn.Module):
                     logits_valid = logits_flat[valid_mask].squeeze(-1)
                     labels_valid = labels_flat[valid_mask].float()
                     
-                    criterion = nn.BCEWithLogitsLoss()
+                    criterion: nn.BCEWithLogitsLoss | nn.CrossEntropyLoss = nn.BCEWithLogitsLoss()
                     cur_loss = criterion(logits_valid, labels_valid)
                 else:
                     criterion = nn.CrossEntropyLoss(ignore_index=-100)
@@ -75,13 +76,13 @@ class MorphologyClassifier(nn.Module):
 
         return result
 
-    def _forward_lemmatization(self, **kwargs):
+    def _forward_lemmatization(self, **kwargs: Any) -> dict[str, dict[str, torch.Tensor]]:
         raise NotImplementedError
 
     def forward(
         self,
         task_defined_batch: TaskDefinedBatch,
-    ):
+    ) -> dict[str, dict[str, torch.Tensor]]:
         if task_defined_batch.task_name == "pos+morphology":
             return self._forward_morphology(**task_defined_batch)
         elif task_defined_batch.task_name == "lemmatization":

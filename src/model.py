@@ -59,7 +59,7 @@ class MorphologyClassifier(nn.Module):
                     valid_mask = labels_flat != -100
                     logits_valid = logits_flat[valid_mask].squeeze(-1)
                     labels_valid = labels_flat[valid_mask].float()
-                    
+
                     criterion: nn.BCEWithLogitsLoss | nn.CrossEntropyLoss = nn.BCEWithLogitsLoss()
                     cur_loss = criterion(logits_valid, labels_valid)
                 else:
@@ -89,4 +89,3 @@ class MorphologyClassifier(nn.Module):
             return self._forward_lemmatization(**task_defined_batch)
         else:
             raise ValueError(f"Unknown task {task_defined_batch.task_name}")
-        

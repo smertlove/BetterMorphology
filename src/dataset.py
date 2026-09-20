@@ -7,6 +7,7 @@ from typing import Iterator, Any
 from transformers import PreTrainedTokenizer
 from collections import UserDict
 from uuid import uuid4
+import torch
 
 from .categories import (
     UNDEFINED,
@@ -15,12 +16,17 @@ from .categories import (
 )
 
 
-class TaskDefinedBatch(UserDict[str, Any]):
+class TaskDefinedBatch(UserDict):
     def __init__(self, task_name: str, **kwargs: Any):
         super().__init__(**kwargs)
-        for key, value in kwargs.items():
-            self[key] = value
-        self.task_name: str = task_name
+        self.task_name = task_name
+
+    def to(self, device):
+        for key in list(self.data.keys()):
+            value = self.data[key]
+            if isinstance(value, torch.Tensor):
+                self.data[key] = value.to(device)
+        return self
 
 
 IGNORE_INDEX = -100
@@ -59,6 +65,11 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
             with open(file_path, "r", encoding="utf-8") as f:
                 for sentence in parse_incr(f):
+                    ## NOTE: Tokenizer-level truncation is potentially bad for syntax learning
+                    # (most likely one of our future tasks).
+                    # This avoids parsing explicitly large texts instead.
+                    if len(sentence) > 256:
+                        continue
                     yield sentence
 
     def _debug_repeat(self, sentences: Iterator[TokenList]) -> Iterator[TokenList]:

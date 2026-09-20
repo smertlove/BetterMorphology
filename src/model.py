@@ -45,7 +45,7 @@ class MorphologyClassifier(nn.Module):
         per_category_losses = dict()
         if labels is not None:
             for i, name in enumerate(self.names_order):
-                print(name)
+
                 cur_labels = labels[:, :, i]  # [bs, seqlen]
                 cur_logits = per_category_logits[name]  # [bs, seqlen, nclasses]
 

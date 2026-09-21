@@ -200,11 +200,7 @@ class MultitaskTrainer:
                 if patience >= max_patience:
                     break
 
-            # TODO: make this normal
-            training_log = pd.DataFrame(all_metrics)
-            training_log.to_csv("training_log.csv")
-
-        return training_log
+        return all_metrics
     
 
     def train(
@@ -224,7 +220,7 @@ class MultitaskTrainer:
         main_metric="loss",
         greater_is_better=False,
         max_patience=3,
-    ):
+    ) -> pd.DataFrame:
 
         model.to(device)
 
@@ -241,7 +237,7 @@ class MultitaskTrainer:
             collate_fn=collate_fn,
         )
 
-        return self._run_training_loop(
+        all_metrics = self._run_training_loop(
             model=model,
             device=device,
 
@@ -255,3 +251,7 @@ class MultitaskTrainer:
             greater_is_better=greater_is_better,
             max_patience=max_patience,
         )
+
+        training_log = pd.DataFrame(all_metrics)
+        return training_log
+

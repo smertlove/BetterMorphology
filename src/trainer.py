@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from .dataset import TaskDefinedBatch
 from typing import Callable
+from pathlib import Path
 
 
 class ScheduleStrategy(Enum):
@@ -143,11 +144,16 @@ class MultitaskTrainer:
         val_dataloader: torch.utils.data.DataLoader[TaskDefinedBatch],
         estimated_val_size: int,
         n_epochs: int,
+        cpt_dir: str | Path,
 
         main_metric: str = "loss",
         greater_is_better: bool = False,
         max_patience: int = 3,
     ) -> list[dict[str, float]]:
+
+        if isinstance(cpt_dir, str):
+            cpt_dir = Path(cpt_dir)
+        cpt_dir.mkdir(exist_ok=True)
 
         patience = 0
         best_val_metric = 0 if greater_is_better else float("inf")
@@ -192,10 +198,10 @@ class MultitaskTrainer:
                 improvement = abs(val_metrics[main_metric] - best_val_metric)
                 best_val_metric = val_metrics[main_metric]
 
-                print(f"Save model: {main_metric}={best_val_metric} (improvement {improvement})")
+                cpt_name = f"cpt_{epoch}"
+                torch.save(model, cpt_dir / cpt_name / "model.pt")
+                print(f"Save model: {main_metric}={best_val_metric: .4f} (improvement {improvement})")
 
-                # TODO: make this normal
-                torch.save(model, "checkpoints/model.pt")
                 patience = 0
 
             else:
@@ -215,6 +221,8 @@ class MultitaskTrainer:
         val_dataset: torch.utils.data.Dataset[TaskDefinedBatch],
         estimated_val_size: int,
         collate_fn: Callable[[list[TaskDefinedBatch]], TaskDefinedBatch],
+
+        cpt_dir: str | Path,
 
         n_epochs: int,
         batch_size: int,
@@ -248,6 +256,7 @@ class MultitaskTrainer:
             val_dataloader=val_dataloader,
             estimated_val_size=estimated_val_size // batch_size,
             n_epochs=n_epochs,
+            cpt_dir=cpt_dir,
 
             main_metric=main_metric,
             greater_is_better=greater_is_better,

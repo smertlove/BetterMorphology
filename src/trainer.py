@@ -8,6 +8,8 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from .dataset import TaskDefinedBatch
+from typing import Callable
 
 class ScheduleStrategy(Enum):
     EPOCH = "epoch"
@@ -18,7 +20,7 @@ class LifecycleMode(Enum):
     VALIDATION = "validation"
     TEST = "test"
 
-def _update_cur_metrics(cur_metrics, metrics_to_add, suffix):
+def _update_cur_metrics(cur_metrics: dict[str, float], metrics_to_add: dict[str, float], suffix: str) -> None:
     for k, v in metrics_to_add.items():
         if k in cur_metrics: raise ValueError(f"{k} already defined")
         cur_metrics[k + "_" + suffix] = v
@@ -41,12 +43,12 @@ class MultitaskTrainer:
 
     def _train_batch_morphology(
         self,
-        model,
-        batch,
+        model: torch.nn.Module,
+        batch: TaskDefinedBatch,
         mode: LifecycleMode,
-        device="cpu",
-    ):
-        # get predictions
+        device: torch.device | str="cpu",
+    ) -> dict[str, float]:
+
         batch.to(device)
         if mode == LifecycleMode.TRAIN:
             self.optimizer.zero_grad()
@@ -61,10 +63,10 @@ class MultitaskTrainer:
         loss = torch.stack(list(per_category_losses.values())).mean()
 
         if mode == LifecycleMode.TRAIN:
-            loss.backward()
+            loss.backward()  # type: ignore[no-untyped-call]
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             self.optimizer.step()
-            if self.schedule_strategy == "batch" and self.scheduler is not None:
+            if self.schedule_strategy == ScheduleStrategy.BATCH and self.scheduler is not None:
                 self.scheduler.step()
 
         result = {
@@ -75,19 +77,19 @@ class MultitaskTrainer:
 
     def _train_batch_lemmatization(
             self,
-            model,
-            batch,
+            model: torch.nn.Module,
+            batch: TaskDefinedBatch,
             mode: LifecycleMode,
-            device="cpu",
-        ): raise NotImplementedError
+            device: torch.device | str="cpu",
+        ) -> dict[str, float]: raise NotImplementedError
 
     def _process_batch(   
         self,
-        model,
-        batch,
+        model: torch.nn.Module,
+        batch: TaskDefinedBatch,
         mode: LifecycleMode,
-        device="cpu",
-    ):
+        device: torch.device | str="cpu",
+    ) -> dict[str, float]:
         task_name = batch.task_name
         if task_name == "pos+morphology":
             result =  self._train_batch_morphology(model=model, batch=batch, device=device, mode=mode)
@@ -100,12 +102,12 @@ class MultitaskTrainer:
 
     def _process_epoch(
         self,
-        model,
-        iterator,
-        estimated_iter_size,
+        model: torch.nn.Module,
+        iterator: torch.utils.data.DataLoader[TaskDefinedBatch],
+        estimated_iter_size: int,
         mode: LifecycleMode,
-        device="cpu",
-    ):
+        device:  torch.device | str="cpu",
+    ) -> dict[str, float]:
         if mode == LifecycleMode.TRAIN:
             model.train()
         else:
@@ -120,33 +122,33 @@ class MultitaskTrainer:
                 all_results[k].append(val)
 
         if mode == LifecycleMode.TRAIN:
-            if self.schedule_strategy == "epoch" and self.scheduler is not None:
+            if self.schedule_strategy == ScheduleStrategy.EPOCH and self.scheduler is not None:
                 self.scheduler.step()
 
-        avg_results = {k: np.mean(val) for k, val in all_results.items()}
+        avg_results = {k: float(np.mean(val)) for k, val in all_results.items()}
 
         return avg_results
 
     def _run_training_loop(
         self,
 
-        model,
-        device,
+        model: torch.nn.Module,
+        device:  torch.device | str,
 
-        train_dataloader,
-        estimated_train_size,
-        val_dataloader,
-        estimated_val_size,
-        n_epochs,
+        train_dataloader: torch.utils.data.DataLoader[TaskDefinedBatch],
+        estimated_train_size: int,
+        val_dataloader: torch.utils.data.DataLoader[TaskDefinedBatch],
+        estimated_val_size: int,
+        n_epochs: int,
 
-        main_metric="loss",
-        greater_is_better=False,
-        max_patience=3,
-    ):
+        main_metric: str="loss",
+        greater_is_better: bool=False,
+        max_patience: int=3,
+    ) -> list[dict[str, float]]:
 
         patience = 0
         best_val_metric = 0 if greater_is_better else float("inf")
-        all_metrics = []
+        all_metrics: list[dict[str, float]] = []
 
         # # TODO: make this work properly
         main_metric = main_metric + "_pos+morphology"
@@ -155,7 +157,7 @@ class MultitaskTrainer:
 
             print(f"Epoch: {epoch}/{n_epochs}")
 
-            cur_metrics = OrderedDict()
+            cur_metrics: dict[str, float] = OrderedDict()
 
             train_metrics = self._process_epoch(
                 model=model,
@@ -176,7 +178,8 @@ class MultitaskTrainer:
             )
 
             _update_cur_metrics(cur_metrics, val_metrics, "val")
-            print(cur_metrics)
+
+            cmp_fn: Callable[[float, float], bool]
             if greater_is_better:
                 cmp_fn = lambda new, old: new > old
             else:
@@ -206,20 +209,20 @@ class MultitaskTrainer:
     def train(
         self,
 
-        model,
-        device,
-        train_dataset,
-        estimated_train_size,
-        val_dataset,
-        estimated_val_size,
-        collate_fn,
+        model: torch.nn.Module,
+        device:  torch.device | str,
+        train_dataset: torch.utils.data.Dataset[TaskDefinedBatch],
+        estimated_train_size: int,
+        val_dataset: torch.utils.data.Dataset[TaskDefinedBatch],
+        estimated_val_size: int,
+        collate_fn: Callable[[list[TaskDefinedBatch]], TaskDefinedBatch],
 
         n_epochs: int,
         batch_size: int,
 
-        main_metric="loss",
-        greater_is_better=False,
-        max_patience=3,
+        main_metric: str="loss",
+        greater_is_better: bool=False,
+        max_patience: int=3,
     ) -> pd.DataFrame:
 
         model.to(device)

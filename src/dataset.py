@@ -16,12 +16,12 @@ from .categories import (
 )
 
 
-class TaskDefinedBatch(UserDict):
+class TaskDefinedBatch(UserDict[str, Any]):
     def __init__(self, task_name: str, **kwargs: Any):
         super().__init__(**kwargs)
         self.task_name = task_name
 
-    def to(self, device):
+    def to(self, device: torch.device | str) -> "TaskDefinedBatch":
         for key in list(self.data.keys()):
             value = self.data[key]
             if isinstance(value, torch.Tensor):

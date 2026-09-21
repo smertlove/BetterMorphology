@@ -7,6 +7,7 @@ from enum import Enum
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 class ScheduleStrategy(Enum):
     EPOCH = "epoch"
@@ -101,6 +102,7 @@ class MultitaskTrainer:
         self,
         model,
         iterator,
+        estimated_iter_size,
         mode: LifecycleMode,
         device="cpu",
     ):
@@ -111,7 +113,7 @@ class MultitaskTrainer:
 
         all_results = defaultdict(list)
 
-        for batch in iterator:
+        for batch in tqdm(iterator, total=estimated_iter_size):
 
             train_batch_result = self._process_batch(model=model, batch=batch, device=device, mode=mode)
             for k, val in train_batch_result.items():
@@ -132,7 +134,9 @@ class MultitaskTrainer:
         device,
 
         train_dataloader,
+        estimated_train_size,
         val_dataloader,
+        estimated_val_size,
         n_epochs,
 
         main_metric="loss",
@@ -144,8 +148,8 @@ class MultitaskTrainer:
         best_val_metric = 0 if greater_is_better else float("inf")
         all_metrics = []
 
-        # TODO: make this work properly
-        main_metric = main_metric + "_pos+morphology_val"
+        # # TODO: make this work properly
+        main_metric = main_metric + "_pos+morphology"
 
         for epoch in range(1, n_epochs + 1):
 
@@ -157,6 +161,7 @@ class MultitaskTrainer:
                 model=model,
                 iterator=train_dataloader,
                 device=device,
+                estimated_iter_size=estimated_train_size,
                 mode=LifecycleMode.TRAIN
             )
 
@@ -166,11 +171,12 @@ class MultitaskTrainer:
                 model=model,
                 iterator=val_dataloader,
                 device=device,
+                estimated_iter_size=estimated_val_size,
                 mode=LifecycleMode.VALIDATION
             )
 
             _update_cur_metrics(cur_metrics, val_metrics, "val")
-
+            print(cur_metrics)
             if greater_is_better:
                 cmp_fn = lambda new, old: new > old
             else:
@@ -207,7 +213,9 @@ class MultitaskTrainer:
         model,
         device,
         train_dataset,
+        estimated_train_size,
         val_dataset,
+        estimated_val_size,
         collate_fn,
 
         n_epochs: int,
@@ -238,7 +246,9 @@ class MultitaskTrainer:
             device=device,
 
             train_dataloader=train_dataloader,
+            estimated_train_size=estimated_train_size // batch_size,
             val_dataloader=val_dataloader,
+            estimated_val_size=estimated_val_size // batch_size,
             n_epochs=n_epochs,
 
             main_metric=main_metric,

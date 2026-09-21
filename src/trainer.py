@@ -200,7 +200,7 @@ class MultitaskTrainer:
 
                 cpt_name = f"cpt_{epoch}"
                 torch.save(model, cpt_dir / cpt_name / "model.pt")
-                print(f"Save model: {main_metric}={best_val_metric: .4f} (improvement {improvement})")
+                print(f"Save model: {main_metric}={best_val_metric: .4f} (improvement {improvement: .4f})")
 
                 patience = 0
 

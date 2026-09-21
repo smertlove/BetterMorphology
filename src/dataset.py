@@ -65,7 +65,7 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
             with open(file_path, "r", encoding="utf-8") as f:
                 for sentence in parse_incr(f):
-                    ## NOTE: Tokenizer-level truncation is potentially bad for syntax learning
+                    # NOTE: Tokenizer-level truncation is potentially bad for syntax learning
                     # (most likely one of our future tasks).
                     # This avoids parsing explicitly large texts instead.
                     if len(sentence) > 256:

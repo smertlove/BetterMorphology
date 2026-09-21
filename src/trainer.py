@@ -2,7 +2,6 @@ from collections import defaultdict, OrderedDict
 import pandas as pd
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from typing import Literal
 from enum import Enum
 import numpy as np
 import torch
@@ -11,19 +10,24 @@ from tqdm import tqdm
 from .dataset import TaskDefinedBatch
 from typing import Callable
 
+
 class ScheduleStrategy(Enum):
     EPOCH = "epoch"
     BATCH = "batch"
+
 
 class LifecycleMode(Enum):
     TRAIN = "train"
     VALIDATION = "validation"
     TEST = "test"
 
+
 def _update_cur_metrics(cur_metrics: dict[str, float], metrics_to_add: dict[str, float], suffix: str) -> None:
     for k, v in metrics_to_add.items():
-        if k in cur_metrics: raise ValueError(f"{k} already defined")
+        if k in cur_metrics:
+            raise ValueError(f"{k} already defined")
         cur_metrics[k + "_" + suffix] = v
+
 
 class MultitaskTrainer:
 
@@ -31,7 +35,7 @@ class MultitaskTrainer:
         self,
 
         optimizer: Optimizer,
-        scheduler: LRScheduler | None=None,
+        scheduler: LRScheduler | None = None,
 
         schedule_strategy: ScheduleStrategy = ScheduleStrategy.EPOCH,
     ):
@@ -40,13 +44,12 @@ class MultitaskTrainer:
         self.scheduler = scheduler
         self.schedule_strategy = schedule_strategy
 
-
     def _train_batch_morphology(
         self,
         model: torch.nn.Module,
         batch: TaskDefinedBatch,
         mode: LifecycleMode,
-        device: torch.device | str="cpu",
+        device: torch.device | str = "cpu",
     ) -> dict[str, float]:
 
         batch.to(device)
@@ -57,7 +60,7 @@ class MultitaskTrainer:
             with torch.no_grad():
                 outputs = model(batch)
 
-        per_category_logits = outputs['per_category_logits']
+        # per_category_logits = outputs['per_category_logits']
         per_category_losses = outputs['per_category_losses']
 
         loss = torch.stack(list(per_category_losses.values())).mean()
@@ -80,21 +83,21 @@ class MultitaskTrainer:
             model: torch.nn.Module,
             batch: TaskDefinedBatch,
             mode: LifecycleMode,
-            device: torch.device | str="cpu",
+            device: torch.device | str = "cpu",
         ) -> dict[str, float]: raise NotImplementedError
 
-    def _process_batch(   
+    def _process_batch(
         self,
         model: torch.nn.Module,
         batch: TaskDefinedBatch,
         mode: LifecycleMode,
-        device: torch.device | str="cpu",
+        device: torch.device | str = "cpu",
     ) -> dict[str, float]:
         task_name = batch.task_name
         if task_name == "pos+morphology":
-            result =  self._train_batch_morphology(model=model, batch=batch, device=device, mode=mode)
+            result = self._train_batch_morphology(model=model, batch=batch, device=device, mode=mode)
         elif task_name == "lemmatization":
-            result =  self._train_batch_lemmatization(model=model, batch=batch, device=device, mode=mode)
+            result = self._train_batch_lemmatization(model=model, batch=batch, device=device, mode=mode)
         else:
             raise ValueError(f"Unknown task name: {task_name}")
         result = {k + "_" + task_name: val for k, val in result.items()}
@@ -106,7 +109,7 @@ class MultitaskTrainer:
         iterator: torch.utils.data.DataLoader[TaskDefinedBatch],
         estimated_iter_size: int,
         mode: LifecycleMode,
-        device:  torch.device | str="cpu",
+        device:  torch.device | str = "cpu",
     ) -> dict[str, float]:
         if mode == LifecycleMode.TRAIN:
             model.train()
@@ -141,16 +144,16 @@ class MultitaskTrainer:
         estimated_val_size: int,
         n_epochs: int,
 
-        main_metric: str="loss",
-        greater_is_better: bool=False,
-        max_patience: int=3,
+        main_metric: str = "loss",
+        greater_is_better: bool = False,
+        max_patience: int = 3,
     ) -> list[dict[str, float]]:
 
         patience = 0
         best_val_metric = 0 if greater_is_better else float("inf")
         all_metrics: list[dict[str, float]] = []
 
-        # # TODO: make this work properly
+        # TODO: make this work properly
         main_metric = main_metric + "_pos+morphology"
 
         for epoch in range(1, n_epochs + 1):
@@ -179,13 +182,10 @@ class MultitaskTrainer:
 
             _update_cur_metrics(cur_metrics, val_metrics, "val")
 
-            cmp_fn: Callable[[float, float], bool]
             if greater_is_better:
-                cmp_fn = lambda new, old: new > old
+                checkpoint_is_better = val_metrics[main_metric] > best_val_metric
             else:
-                cmp_fn = lambda new, old: new < old
-
-            checkpoint_is_better = cmp_fn(val_metrics[main_metric], best_val_metric)
+                checkpoint_is_better = val_metrics[main_metric] < best_val_metric
 
             if checkpoint_is_better:
 
@@ -204,7 +204,6 @@ class MultitaskTrainer:
                     break
 
         return all_metrics
-    
 
     def train(
         self,
@@ -220,9 +219,9 @@ class MultitaskTrainer:
         n_epochs: int,
         batch_size: int,
 
-        main_metric: str="loss",
-        greater_is_better: bool=False,
-        max_patience: int=3,
+        main_metric: str = "loss",
+        greater_is_better: bool = False,
+        max_patience: int = 3,
     ) -> pd.DataFrame:
 
         model.to(device)
@@ -257,4 +256,3 @@ class MultitaskTrainer:
 
         training_log = pd.DataFrame(all_metrics)
         return training_log
-

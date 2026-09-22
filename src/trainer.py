@@ -64,7 +64,7 @@ class MultitaskTrainer:
         # per_category_logits = outputs['per_category_logits']
         per_category_losses = outputs['per_category_losses']
 
-        loss = torch.stack(list(per_category_losses.values())).mean()
+        loss = torch.stack(list(per_category_losses.values())).sum()
 
         if mode == LifecycleMode.TRAIN:
             loss.backward()  # type: ignore[no-untyped-call]
@@ -76,6 +76,9 @@ class MultitaskTrainer:
         result = {
             "loss": loss.detach().item()
         }
+
+        for k, val in per_category_losses.items():
+            result[k] = float(val.detach().item())
 
         return result
 
@@ -149,6 +152,7 @@ class MultitaskTrainer:
         main_metric: str = "loss",
         greater_is_better: bool = False,
         max_patience: int = 3,
+        unfreeze_backbone_after: int|None = None,
     ) -> list[dict[str, float]]:
 
         if isinstance(cpt_dir, str):
@@ -188,6 +192,8 @@ class MultitaskTrainer:
 
             _update_cur_metrics(cur_metrics, val_metrics, "val")
 
+            all_metrics.append(cur_metrics)
+
             if greater_is_better:
                 checkpoint_is_better = val_metrics[main_metric] > best_val_metric
             else:
@@ -201,7 +207,7 @@ class MultitaskTrainer:
                 cpt_name = f"cpt_{epoch}"
                 cur_cpt_dir = cpt_dir / cpt_name
                 cur_cpt_dir.mkdir()
-                torch.save(model, cur_cpt_dir / "model.pt")
+                model.save(cur_cpt_dir / "state_dict.pt")
                 print(f"Save model: {main_metric}={best_val_metric: .4f} (improvement {improvement: .4f})")
 
                 patience = 0
@@ -210,6 +216,11 @@ class MultitaskTrainer:
                 patience += 1
                 if patience >= max_patience:
                     break
+
+            if unfreeze_backbone_after is not None and epoch > unfreeze_backbone_after:
+                print("Unfreezing model")
+                unfreeze_backbone_after = None
+                model.train_backbone(True)
 
         return all_metrics
 
@@ -232,6 +243,7 @@ class MultitaskTrainer:
         main_metric: str = "loss",
         greater_is_better: bool = False,
         max_patience: int = 3,
+        unfreeze_backbone_after: int|None = None,
     ) -> pd.DataFrame:
 
         model.to(device)
@@ -263,6 +275,8 @@ class MultitaskTrainer:
             main_metric=main_metric,
             greater_is_better=greater_is_better,
             max_patience=max_patience,
+
+            unfreeze_backbone_after=unfreeze_backbone_after,
         )
 
         training_log = pd.DataFrame(all_metrics)

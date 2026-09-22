@@ -89,3 +89,10 @@ class MorphologyClassifier(nn.Module):
             return self._forward_lemmatization(**task_defined_batch)
         else:
             raise ValueError(f"Unknown task {task_defined_batch.task_name}")
+
+    def train_backbone(self, flg: bool):
+        for param in self.encoder.parameters():
+            param.requires_grad = flg
+
+    def save(self, path):
+        torch.save(self.state_dict(), path)

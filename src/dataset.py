@@ -8,7 +8,7 @@ from transformers import PreTrainedTokenizer
 from collections import UserDict
 from uuid import uuid4
 import torch
-
+from torch.utils.data import get_worker_info
 from .categories import (
     UNDEFINED,
     name2mapping_to_id,
@@ -51,6 +51,8 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
         self.bufsize = bufsize
         self.encoder_tokenizer = encoder_tokenizer
         self.decoder_tokenizer = decoder_tokenizer
+
+        self.seed = 42
 
     def _get_subsets_paths(self) -> list[SubsetAndPath]:
         subsets_paths = deepcopy(self.subsets_paths)
@@ -99,9 +101,34 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
         """Prepares actual model inputs and labels"""
         raise NotImplementedError
 
+    # def __iter__(self) -> Iterator[TaskDefinedBatch]:
+
+    #     # TODO: shard if I/O becomes a bottleneck
+
+    #     subsets_paths = self._get_subsets_paths()
+    #     stream = self._parse_sentences(subsets_paths)
+
+    #     if self.debug_fit:
+    #         stream = self._debug_repeat(stream)
+    #     elif self.shuffle:
+    #         stream = self._buffer_shuffle(stream)
+
+    #     for sentence in stream:
+    #         yield from self._prepare_model_input(sentence)
+
     def __iter__(self) -> Iterator[TaskDefinedBatch]:
+        info = get_worker_info()
+
+        # seed RNG per worker so shuffle doesn't collide across workers
+        if info is not None:
+            random.seed(self.seed + info.id)
 
         subsets_paths = self._get_subsets_paths()
+
+        # shard files across workers
+        if info is not None and info.num_workers > 1:
+            subsets_paths = subsets_paths[info.id :: info.num_workers]
+
         stream = self._parse_sentences(subsets_paths)
 
         if self.debug_fit:

@@ -4,6 +4,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from enum import Enum
 import numpy as np
+import math
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -217,7 +218,7 @@ class MultitaskTrainer:
                 if patience >= max_patience:
                     break
 
-            if unfreeze_backbone_after is not None and epoch > unfreeze_backbone_after:
+            if unfreeze_backbone_after is not None and epoch >= unfreeze_backbone_after:
                 print("Unfreezing model")
                 unfreeze_backbone_after = None
                 model.train_backbone(True)
@@ -253,6 +254,8 @@ class MultitaskTrainer:
             train_dataset,
             batch_size=batch_size,
             collate_fn=collate_fn,
+            worker_init_fn=worker_init_fn,
+            num_workers=1,
         )
 
         val_dataloader = DataLoader(
@@ -260,6 +263,8 @@ class MultitaskTrainer:
             batch_size=batch_size,
             shuffle=False,
             collate_fn=collate_fn,
+            worker_init_fn=worker_init_fn,
+            num_workers=1,
         )
 
         all_metrics = self._run_training_loop(
@@ -267,9 +272,9 @@ class MultitaskTrainer:
             device=device,
 
             train_dataloader=train_dataloader,
-            estimated_train_size=estimated_train_size // batch_size,
+            estimated_train_size=math.ceil(estimated_train_size / batch_size),
             val_dataloader=val_dataloader,
-            estimated_val_size=estimated_val_size // batch_size,
+            estimated_val_size=math.ceil(estimated_val_size / batch_size),
             n_epochs=n_epochs,
             cpt_dir=cpt_dir,
 

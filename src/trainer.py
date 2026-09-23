@@ -234,6 +234,7 @@ class MultitaskTrainer:
         val_dataset: torch.utils.data.Dataset[TaskDefinedBatch],
         estimated_val_size: int,
         collate_fn: Callable[[list[TaskDefinedBatch]], TaskDefinedBatch],
+        worker_init_fn: Callable[[int], None],
 
         cpt_dir: str | Path,
 

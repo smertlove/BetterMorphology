@@ -255,7 +255,7 @@ class MultitaskTrainer:
             batch_size=batch_size,
             collate_fn=collate_fn,
             worker_init_fn=worker_init_fn,
-            num_workers=1,
+            num_workers=4,
         )
 
         val_dataloader = DataLoader(
@@ -264,7 +264,7 @@ class MultitaskTrainer:
             shuffle=False,
             collate_fn=collate_fn,
             worker_init_fn=worker_init_fn,
-            num_workers=1,
+            num_workers=4,
         )
 
         all_metrics = self._run_training_loop(

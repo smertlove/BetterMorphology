@@ -54,12 +54,6 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
         self.seed = 42
 
-    def _get_subsets_paths(self) -> list[SubsetAndPath]:
-        subsets_paths = deepcopy(self.subsets_paths)
-        if self.shuffle:
-            random.shuffle(subsets_paths)
-        return subsets_paths
-
     def _parse_sentences(self, subsets_paths: list[SubsetAndPath]) -> Iterator[TokenList]:
         for pair in subsets_paths:
 
@@ -104,15 +98,14 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
     def __iter__(self) -> Iterator[TaskDefinedBatch]:
         info = get_worker_info()
 
-        # seed RNG per worker so shuffle doesn't collide across workers
-        if info is not None:
-            random.seed(self.seed + info.id)
-
-        subsets_paths = self._get_subsets_paths()
-
         # shard files across workers
         if info is not None and info.num_workers > 1:
-            subsets_paths = subsets_paths[info.id::info.num_workers]
+            subsets_paths = deepcopy(self.subsets_paths[info.id::info.num_workers])
+        else:
+            subsets_paths = deepcopy(self.subsets_paths)
+
+        if self.shuffle:
+            random.shuffle(subsets_paths)
 
         stream = self._parse_sentences(subsets_paths)
 

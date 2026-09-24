@@ -101,21 +101,6 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
         """Prepares actual model inputs and labels"""
         raise NotImplementedError
 
-    # def __iter__(self) -> Iterator[TaskDefinedBatch]:
-
-    #     # TODO: shard if I/O becomes a bottleneck
-
-    #     subsets_paths = self._get_subsets_paths()
-    #     stream = self._parse_sentences(subsets_paths)
-
-    #     if self.debug_fit:
-    #         stream = self._debug_repeat(stream)
-    #     elif self.shuffle:
-    #         stream = self._buffer_shuffle(stream)
-
-    #     for sentence in stream:
-    #         yield from self._prepare_model_input(sentence)
-
     def __iter__(self) -> Iterator[TaskDefinedBatch]:
         info = get_worker_info()
 

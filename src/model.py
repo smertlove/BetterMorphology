@@ -3,6 +3,7 @@ from torch import nn
 import torch
 from transformers import AutoModel
 from typing import Any
+from pathlib import Path
 
 
 class MorphologyClassifier(nn.Module):
@@ -90,9 +91,9 @@ class MorphologyClassifier(nn.Module):
         else:
             raise ValueError(f"Unknown task {task_defined_batch.task_name}")
 
-    def train_backbone(self, flg: bool):
+    def train_backbone(self, flg: bool) -> None:
         for param in self.encoder.parameters():
             param.requires_grad = flg
 
-    def save(self, path):
+    def save(self, path: str | Path) -> None:
         torch.save(self.state_dict(), path)

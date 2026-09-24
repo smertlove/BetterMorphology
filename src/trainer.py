@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from .dataset import TaskDefinedBatch
+from .model import MorphologyClassifier
 from typing import Callable
 from pathlib import Path
 
@@ -48,7 +49,7 @@ class MultitaskTrainer:
 
     def _train_batch_morphology(
         self,
-        model: torch.nn.Module,
+        model: MorphologyClassifier,
         batch: TaskDefinedBatch,
         mode: LifecycleMode,
         device: torch.device | str = "cpu",
@@ -85,7 +86,7 @@ class MultitaskTrainer:
 
     def _train_batch_lemmatization(
             self,
-            model: torch.nn.Module,
+            model: MorphologyClassifier,
             batch: TaskDefinedBatch,
             mode: LifecycleMode,
             device: torch.device | str = "cpu",
@@ -93,7 +94,7 @@ class MultitaskTrainer:
 
     def _process_batch(
         self,
-        model: torch.nn.Module,
+        model: MorphologyClassifier,
         batch: TaskDefinedBatch,
         mode: LifecycleMode,
         device: torch.device | str = "cpu",
@@ -110,7 +111,7 @@ class MultitaskTrainer:
 
     def _process_epoch(
         self,
-        model: torch.nn.Module,
+        model: MorphologyClassifier,
         iterator: torch.utils.data.DataLoader[TaskDefinedBatch],
         estimated_iter_size: int,
         mode: LifecycleMode,
@@ -140,7 +141,7 @@ class MultitaskTrainer:
     def _run_training_loop(
         self,
 
-        model: torch.nn.Module,
+        model: MorphologyClassifier,
         device:  torch.device | str,
 
         train_dataloader: torch.utils.data.DataLoader[TaskDefinedBatch],
@@ -153,7 +154,7 @@ class MultitaskTrainer:
         main_metric: str = "loss",
         greater_is_better: bool = False,
         max_patience: int = 3,
-        unfreeze_backbone_after: int|None = None,
+        unfreeze_backbone_after: int | None = None,
     ) -> list[dict[str, float]]:
 
         if isinstance(cpt_dir, str):
@@ -228,7 +229,7 @@ class MultitaskTrainer:
     def train(
         self,
 
-        model: torch.nn.Module,
+        model: MorphologyClassifier,
         device:  torch.device | str,
         train_dataset: torch.utils.data.Dataset[TaskDefinedBatch],
         estimated_train_size: int,
@@ -245,7 +246,7 @@ class MultitaskTrainer:
         main_metric: str = "loss",
         greater_is_better: bool = False,
         max_patience: int = 3,
-        unfreeze_backbone_after: int|None = None,
+        unfreeze_backbone_after: int | None = None,
     ) -> pd.DataFrame:
 
         model.to(device)

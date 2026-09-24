@@ -112,7 +112,7 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
 
         # shard files across workers
         if info is not None and info.num_workers > 1:
-            subsets_paths = subsets_paths[info.id :: info.num_workers]
+            subsets_paths = subsets_paths[info.id::info.num_workers]
 
         stream = self._parse_sentences(subsets_paths)
 

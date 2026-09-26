@@ -89,8 +89,8 @@ class MorphologyClassifier(nn.Module):
                 cur_logits = per_category_logits[name]  # [bs, seqlen, nclasses]
 
                 _, _, nclasses = cur_logits.shape
-                logits_flat = cur_logits.view(-1, nclasses)  # [bs*seqlen, nclasses]
-                labels_flat = cur_labels.view(-1)  # [bs*seqlen]
+                logits_flat = cur_logits.reshape(-1, nclasses)  # [bs*seqlen, nclasses]
+                labels_flat = cur_labels.reshape(-1)  # [bs*seqlen]
 
                 task_is_binary = logits_flat.shape[-1] == 1
                 if task_is_binary:

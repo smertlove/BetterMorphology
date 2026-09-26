@@ -6,6 +6,40 @@ from typing import Any
 from pathlib import Path
 
 
+# # This is from https://github.com/murnanedaniel/Dynamic-Loss-Weighting/blob/master/loss_models.py
+# class MultiNoiseLoss(nn.Module):
+#     """
+#     Multi-Task Learning Using Uncertainty to Weigh Losses for Scene Geometry and Semantics (Kendall et al; CVPR 2018).
+#     """
+#     def __init__(self, n_losses: int):
+#         super(MultiNoiseLoss, self).__init__()
+#         self.noise_params = nn.Parameter(torch.rand(n_losses,))
+    
+#     def forward(self, losses: list) -> torch.tensor:
+#         """
+#         Computes the total loss as a function of a list of classification losses.
+#         TODO: Handle regressions losses, which require a factor of 2 (see arxiv.org/abs/1705.07115 page 4)
+
+#         Each loss coeff is of the form: :math:`\frac{1}{\sqrt{\eta_i}} \cdot \ell_i + \log(\eta_i)`
+#         Total loss: :math:`\ell = \sum_{i=1}^{k} \left\[ \frac{1}{\sqrt{\eta_i}} \cdot \ell_i + \log(\eta_i) \right\]`
+#         """
+#         total_loss = 0
+#         for i, loss in enumerate(losses):
+#             total_loss += (1/torch.square(self.noise_params[i]))*loss + torch.log(self.noise_params[i])
+        
+#         return total_loss
+
+
+class SumOfLosses(nn.Module):
+    def __init__(self, weights: list[float]):
+        super().__init__()
+        self.register_buffer("weights", torch.tensor(weights))
+
+    def forward(self, losses):
+        w_losses = torch.stack(losses) * self.weights
+        return w_losses.sum()
+
+
 class MorphologyClassifier(nn.Module):
 
     def __init__(self, names_order: tuple[str, ...], name2mapping_from_id: dict[str, dict[int, str]], encoder_id: str, *args: Any, **kwargs: Any):
@@ -23,6 +57,10 @@ class MorphologyClassifier(nn.Module):
             if out_dim == 2:
                 out_dim = 1
             self.heads[name] = nn.Linear(self.encoder_dim, out_dim)
+
+        n_tasks = len(names_order)
+        # self.multitask_loss = MultiNoiseLoss(n_tasks)
+        self.multitask_loss = SumOfLosses([1/n_tasks for _ in range(n_tasks)])
 
     def _forward_morphology(
         self,
@@ -74,6 +112,7 @@ class MorphologyClassifier(nn.Module):
         }
         if per_category_losses:
             result["per_category_losses"] = per_category_losses
+            result["loss"] = self.multitask_loss([per_category_losses[name] for name in self.names_order])
 
         return result
 

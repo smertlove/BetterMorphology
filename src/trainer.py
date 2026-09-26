@@ -64,9 +64,8 @@ class MultitaskTrainer:
                 outputs = model(batch)
 
         # per_category_logits = outputs['per_category_logits']
-        per_category_losses = outputs['per_category_losses']
 
-        loss = torch.stack(list(per_category_losses.values())).sum()
+        loss = outputs["loss"]
 
         if mode == LifecycleMode.TRAIN:
             loss.backward()  # type: ignore[no-untyped-call]
@@ -79,7 +78,7 @@ class MultitaskTrainer:
             "loss": loss.detach().item()
         }
 
-        for k, val in per_category_losses.items():
+        for k, val in outputs['per_category_losses'].items():
             result[k] = float(val.detach().item())
 
         return result

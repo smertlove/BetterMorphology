@@ -14,7 +14,7 @@ from pathlib import Path
 #     def __init__(self, n_losses: int):
 #         super(MultiNoiseLoss, self).__init__()
 #         self.noise_params = nn.Parameter(torch.rand(n_losses,))
-    
+
 #     def forward(self, losses: list) -> torch.tensor:
 #         """
 #         Computes the total loss as a function of a list of classification losses.
@@ -26,7 +26,7 @@ from pathlib import Path
 #         total_loss = 0
 #         for i, loss in enumerate(losses):
 #             total_loss += (1/torch.square(self.noise_params[i]))*loss + torch.log(self.noise_params[i])
-        
+
 #         return total_loss
 
 

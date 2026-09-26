@@ -12,7 +12,7 @@ from .dataset import TaskDefinedBatch
 from .model import MorphologyClassifier
 from typing import Callable
 from pathlib import Path
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score  # type: ignore
+from sklearn.metrics import f1_score, precision_score, recall_score  # type: ignore
 
 
 class ScheduleStrategy(Enum):
@@ -171,7 +171,7 @@ class MultitaskTrainer:
             result = self._train_batch_lemmatization(model=model, batch=batch, device=device, mode=mode)
         else:
             raise ValueError(f"Unknown task name: {task_name}")
-        result = {task_name + "::" + (k + "::loss" if k != "loss" else k) : val for k, val in result.items()}
+        result = {task_name + "::" + (k + "::loss" if k != "loss" else k): val for k, val in result.items()}
         return result
 
     def _process_epoch(

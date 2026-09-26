@@ -1,5 +1,5 @@
 # type: ignore
-
+# flake8: noqa
 import matplotlib.pyplot as plt
 from collections import defaultdict
 

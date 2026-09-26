@@ -33,9 +33,10 @@ from pathlib import Path
 class SumOfLosses(nn.Module):
     def __init__(self, weights: list[float]):
         super().__init__()
+        self.weights: torch.Tensor
         self.register_buffer("weights", torch.tensor(weights))
 
-    def forward(self, losses):
+    def forward(self, losses: list[torch.Tensor]) -> torch.Tensor:
         w_losses = torch.stack(losses) * self.weights
         return w_losses.sum()
 

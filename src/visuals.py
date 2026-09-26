@@ -1,8 +1,10 @@
+# type: ignore
+
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
 
-def parse_columns(columns, sep="::"):
+def parse_columns(columns: list[str], sep="::"):
 
     main_losses = []
     per_category_losses = defaultdict(list)
@@ -25,7 +27,7 @@ def parse_columns(columns, sep="::"):
 
 
 def plot_all(main_losses, per_category_losses, per_category_metrics, names_order, df):
-    def _pretty(name):
+    def _pretty(name: str) -> str:
         parts = name.split("::")
         return parts[3] + "_" + parts[2] if len(parts) > 1 else name
 

@@ -12,7 +12,7 @@ from .dataset import TaskDefinedBatch
 from .model import MorphologyClassifier
 from typing import Callable
 from pathlib import Path
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score  # type: ignore
 
 
 class ScheduleStrategy(Enum):
@@ -49,7 +49,7 @@ class MultitaskTrainer:
         self.schedule_strategy = schedule_strategy
 
         # keyed by (task_name, category) -> [list_of_preds, list_of_golds, n_classes]
-        self._metric_buffer: dict[tuple[str, str], dict] = {}
+        self._metric_buffer: dict[tuple[str, str], dict[str, list[np.typing.ArrayLike]]] = {}
 
     def _reset_metric_buffer(self) -> None:
         self._metric_buffer = {}
@@ -60,7 +60,7 @@ class MultitaskTrainer:
         task_name: str,
         per_category_logits: dict[str, torch.Tensor],
         labels: torch.Tensor,
-        names_order: list[str],
+        names_order: tuple[str, ...],
     ) -> None:
         for i, category in enumerate(names_order):
             cur_labels = labels[:, :, i]  # [bs, seqlen]
@@ -125,7 +125,7 @@ class MultitaskTrainer:
 
         # --- backward ---
         if mode == LifecycleMode.TRAIN:
-            loss.backward()  # type: ignore[no-untyped-call]
+            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             self.optimizer.step()
             if self.schedule_strategy == ScheduleStrategy.BATCH and self.scheduler is not None:

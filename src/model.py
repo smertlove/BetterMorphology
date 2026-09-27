@@ -68,7 +68,7 @@ class MorphologyClassifier(nn.Module):
         input_ids: torch.Tensor,
         token_type_ids: torch.Tensor,
         attention_mask: torch.Tensor,
-        labels: torch.Tensor | None,
+        labels: torch.Tensor | None = None,
     ) -> dict[str, dict[str, torch.Tensor]]:
         x = self.encoder(
             input_ids=input_ids,

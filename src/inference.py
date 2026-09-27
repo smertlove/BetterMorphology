@@ -3,7 +3,6 @@ from .dataset import TaskDefinedBatch
 from .categories import name2mapping_from_id, names_order, UNDEFINED
 from transformers import PreTrainedTokenizerFast, AutoTokenizer
 from typing import cast
-from collections import defaultdict
 from itertools import batched
 import torch
 
@@ -34,7 +33,7 @@ def infer(
         model_output = model(tdb)
 
         # --- Decode predictions ---
-        cur_result: list[list[dict[str, str]]]  = [
+        cur_result: list[list[dict[str, str]]] = [
             [dict() for _ in range(len(sentence))]
             for sentence in batch
         ]
@@ -62,6 +61,7 @@ def infer(
         result.extend(cur_result)
 
     return result
+
 
 if __name__ == "__main__":
     tok: PreTrainedTokenizerFast = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained("cointegrated/rubert-tiny2"))

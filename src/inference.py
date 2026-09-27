@@ -1,7 +1,8 @@
 from .model import MorphologyClassifier
 from .dataset import TaskDefinedBatch
 from .categories import name2mapping_from_id, names_order, UNDEFINED
-from transformers import PreTrainedTokenizer, AutoTokenizer
+from transformers import PreTrainedTokenizerFast, AutoTokenizer
+from typing import cast
 from collections import defaultdict
 from itertools import batched
 import torch
@@ -11,10 +12,10 @@ import torch
 def infer(
     sentences: list[list[str]],
     model: MorphologyClassifier,
-    tokenizer: PreTrainedTokenizer,
-    device: torch.Device | str = "cpu",
-    batch_size=64,
-) -> list[dict[str, str]]:
+    tokenizer: PreTrainedTokenizerFast,
+    device: torch.device | str = "cpu",
+    batch_size: int = 64,
+) -> list[list[dict[str, str]]]:
 
     model.eval()
     result: list[list[dict[str, str]]] = []
@@ -33,7 +34,7 @@ def infer(
         model_output = model(tdb)
 
         # --- Decode predictions ---
-        cur_result = [
+        cur_result: list[list[dict[str, str]]]  = [
             [dict() for _ in range(len(sentence))]
             for sentence in batch
         ]
@@ -63,7 +64,7 @@ def infer(
     return result
 
 if __name__ == "__main__":
-    tok = AutoTokenizer.from_pretrained("cointegrated/rubert-tiny2")
+    tok: PreTrainedTokenizerFast = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained("cointegrated/rubert-tiny2"))
     model = MorphologyClassifier(names_order=names_order, name2mapping_from_id=name2mapping_from_id, encoder_id="cointegrated/rubert-tiny2")
     state_dict = torch.load("./checkpoints/cpt_6/state_dict.pt")
     model.load_state_dict(state_dict)

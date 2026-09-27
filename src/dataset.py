@@ -4,7 +4,7 @@ from conllu import parse_incr, TokenList
 import random
 from copy import deepcopy
 from typing import Iterator, Any
-from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizerFast
 from collections import UserDict
 from uuid import uuid4
 import torch
@@ -37,8 +37,8 @@ class BaseConlluDataset(IterableDataset[TaskDefinedBatch]):
     def __init__(
         self,
         subsets_paths: list[SubsetAndPath],
-        encoder_tokenizer: PreTrainedTokenizer,
-        decoder_tokenizer: PreTrainedTokenizer,
+        encoder_tokenizer: PreTrainedTokenizerFast,
+        decoder_tokenizer: PreTrainedTokenizerFast,
         debug_fit: bool = False,
         shuffle: bool = False,
         bufsize: int = 10000,

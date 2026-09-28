@@ -41,7 +41,7 @@ def get_predictions_for_file(
                 device=device,
                 batch_size=batch_size,
             )
-
+            assert len(batch) == len(cur_preds)
             for original_sentence, pred_sentence in zip(batch, cur_preds):
                 pred_sentence.metadata = deepcopy(original_sentence.metadata)
 

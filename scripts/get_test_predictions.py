@@ -2,18 +2,26 @@ from src.data_utils import get_train_dev_test_paths
 from src.model import MorphologyClassifier
 from src.inference import infer
 from src.categories import names_order, name2mapping_from_id
+from src.data_utils import SubsetAndPath
 from argparse import ArgumentParser
-from conllu import parse_incr
+from conllu import parse_incr, TokenList
 from itertools import batched
 from copy import deepcopy
 from pathlib import Path
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizerFast
 import torch
 from tqdm import tqdm
+from typing import cast
 
 
 
-def get_predictions_for_file(filename, model, tokenizer, batch_size, device):
+def get_predictions_for_file(
+    filename: Path,
+    model: MorphologyClassifier,
+    tokenizer: PreTrainedTokenizerFast,
+    batch_size: int,
+    device: str
+) -> list[TokenList]:
     with open(filename, "r", encoding="utf-8") as file:
         it = parse_incr(file)
         all_preds = []
@@ -44,13 +52,13 @@ def get_predictions_for_file(filename, model, tokenizer, batch_size, device):
 
 
 def get_all_predictions_and_write_files(
-    test_files,
-    target_dir,
-    model,
-    tokenizer,
-    batch_size,
-    device,
-):
+    test_files: list[SubsetAndPath],
+    target_dir: Path,
+    model: MorphologyClassifier,
+    tokenizer: PreTrainedTokenizerFast,
+    batch_size: int,
+    device: str,
+) -> None:
 
 
     for pair in tqdm(test_files):
@@ -62,7 +70,7 @@ def get_all_predictions_and_write_files(
             f.writelines([pred.serialize() + "\n" for pred in all_preds])
 
 
-def main():
+def main() -> None:
 
     parser = ArgumentParser()
     parser.add_argument("--run_name")
@@ -83,7 +91,7 @@ def main():
     assert not target_dir.exists()
     target_dir.mkdir()
 
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path)
+    tokenizer = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained(args.tokenizer_path))
     model = MorphologyClassifier(names_order, name2mapping_from_id, args.backbone_model_id)
     state_dict = torch.load(args.state_dict_path)
     model.load_state_dict(state_dict)

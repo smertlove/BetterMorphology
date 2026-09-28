@@ -81,6 +81,7 @@ if __name__ == "__main__":
     tok: PreTrainedTokenizerFast = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained("cointegrated/rubert-tiny2"))
     model = MorphologyClassifier(names_order=names_order, name2mapping_from_id=name2mapping_from_id, encoder_id="cointegrated/rubert-tiny2")
     state_dict = torch.load("./checkpoints/cpt_6/state_dict.pt")
+    tok.save_pretrained("./checkpoints/cpt_6/state_dict.pt")
     model.load_state_dict(state_dict)
     inputs = TaskDefinedBatch(
         "pos+morphology",

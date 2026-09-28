@@ -11,20 +11,20 @@ UPOS2ID, ID2UPOS = get_id_mappings(
     "ADJ",
     "ADP",
     "ADV",
-    "ADVPRO",
-    "ANUM",
+    "ADVPRO",  # not in GramEval2020
+    "ANUM",  # not in GramEval2020
     "AUX",
     "CCONJ",
-    "COM",
+    "COM",  # not in GramEval2020
     "DET",
-    "INIT",
+    "INIT",  # not in GramEval2020
     "INTJ",
     "NOUN",
     "NUM",
-    "PARENTH",
+    "PARENTH",  # not in GramEval2020
     "PART",
-    "PRED",
-    "PREDPRO",
+    "PRED",  # not in GramEval2020
+    "PREDPRO",  # not in GramEval2020
     "PRON",
     "PROPN",
     "PUNCT",
@@ -43,13 +43,13 @@ ANIMACY2ID, ID2ANIMACY = get_id_mappings(
 CASE2ID, ID2CASE = get_id_mappings(
     UNDEFINED,
     "Acc",
-    "Acc2",
+    "Acc2",   # not in GramEval2020
     "Dat",
     "Gen",
-    "Gen2",
+    "Gen2",  # !! Par in GramEval2020
     "Ins",
     "Loc",
-    "Loc2",
+    "Loc2",   # not in GramEval2020
     "Nom",
     "Voc",
 )
@@ -63,12 +63,13 @@ GENDER2ID, ID2GENDER = get_id_mappings(
 
 NUMBER2ID, ID2NUMBER = get_id_mappings(
     UNDEFINED,
-    "Count",
-    "Dual",
+    "Count",   # not in GramEval2020
+    "Dual",   # not in GramEval2020
     "Plur",
     "Sing",
 )
 
+# Whole category not in GramEval2020
 NAMETYPE2ID, ID2NAMETYPE = get_id_mappings(
     UNDEFINED,
     "Com",
@@ -93,19 +94,20 @@ MOOD2ID, ID2MOOD = get_id_mappings(
     UNDEFINED,
     "Cnd",
     "Imp",
-    "Imp2",
+    "Imp2",   # not in GramEval2020
     "Ind",
 )
 
 TENSE2ID, ID2TENSE = get_id_mappings(
     UNDEFINED,
-    "Aor",
+    "Aor",  # not in GramEval2020
     "Fut",
-    "Imp",
+    "Imp",   # not in GramEval2020
     "Past",
     "Pres",
 )
 
+# Whole category not in GramEval2020
 TRANSIT2ID, ID2TRANSIT = get_id_mappings(
     UNDEFINED,
     "Intr",
@@ -131,7 +133,7 @@ VOICE2ID, ID2VOICE = get_id_mappings(
 DEGREE2ID, ID2DEGREE = get_id_mappings(
     UNDEFINED,
     "Cmp",
-    "Cmp2",
+    "Cmp2",  # not in GramEval2020
     "Pos",
     "Sup",
 )
@@ -143,6 +145,7 @@ PERSON2ID, ID2PERSON = get_id_mappings(
     "3",
 )
 
+# Whole category not in GramEval2020
 NUMFORM2ID, ID2NUMFORM = get_id_mappings(
     UNDEFINED,
     "Combi",
@@ -151,6 +154,7 @@ NUMFORM2ID, ID2NUMFORM = get_id_mappings(
     "Word",
 )
 
+# Whole category not in GramEval2020
 NUMTYPE2ID, ID2NUMTYPE = get_id_mappings(
     UNDEFINED,
     "Card",
@@ -164,6 +168,7 @@ VARIANT2ID, ID2VARIANT = get_id_mappings(
     "Short",
 )
 
+# Whole category not in GramEval2020
 PRONTYPE2ID, ID2PRONTYPE = get_id_mappings(
     UNDEFINED,
     "Dem",
@@ -183,16 +188,19 @@ ABBR2ID, ID2ABBR = get_id_mappings(
     "Yes",
 )
 
+# Whole category not in GramEval2020
 POSS2ID, ID2POSS = get_id_mappings(
     UNDEFINED,
     "Yes",
 )
 
+# Whole category not in GramEval2020
 INFLCLASS2ID, ID2INFLCLASS = get_id_mappings(
     UNDEFINED,
     "Ind",
 )
 
+# Whole category not in GramEval2020
 REFLEX2ID, ID2REFLEX = get_id_mappings(
     UNDEFINED,
     "Yes",
@@ -208,6 +216,7 @@ FOREIGN2ID, ID2FOREIGN = get_id_mappings(
     "Yes",
 )
 
+# Whole category not in GramEval2020
 HYPH2ID, ID2HYPH = get_id_mappings(
     UNDEFINED,
     "Yes",

@@ -11,8 +11,8 @@ DATA_PATH = "/mnt/data_storage/datasets/conllu/rubic_data-master"
 N_EXAMPLES = 8
 
 UPOS = "VERB"
-FEATURE = "Voice"
-VALUE = "Mid"
+FEATURE = "Tense"
+VALUE = "Imp"
 # VALUE = "Act,Pass"
 
 

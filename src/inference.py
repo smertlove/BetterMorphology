@@ -16,10 +16,10 @@ def infer(
     tokenizer: PreTrainedTokenizerFast,
     device: torch.device | str = "cpu",
     batch_size: int = 64,
-) -> list[list[dict[str, str]]]:
+) -> list[TokenList]:
 
     model.eval()
-    result: list[list[dict[str, str]]] = []
+    result: list[TokenList] = []
 
     for batch in batched(sentences, n=batch_size):
 
@@ -35,7 +35,7 @@ def infer(
         model_output = model(tdb)
 
         # --- Decode predictions ---
-        cur_result: list[list[dict[str, str]]] = [
+        cur_feats: list[list[dict[str, str]]] = [
             [dict() for _ in range(len(sentence))]
             for sentence in batch
         ]
@@ -58,9 +58,20 @@ def infer(
                         pred = int(logits.argmax().item())
                     decoded = name2mapping_from_id[name][pred]
                     if decoded != UNDEFINED:
-                        cur_result[i][word_id][name] = decoded
+                        cur_feats[i][word_id][name] = decoded
 
-        result.extend(cur_result)
+        # --- Transform to conllu objects ---
+        for words, feats_list in zip(batch, cur_feats):
+            tokens: list[Token] = []
+            for word, feats in zip(words, feats_list):
+                token = Token(
+                    form=word,
+                    upos=feats["upos"],
+                    feats={k: val for k, val in feats.items() if k != "upos"}, 
+                )
+                tokens.append(token)
+            token_list = TokenList(tokens)
+            result.append(token_list)
 
     return result
 
@@ -85,28 +96,8 @@ if __name__ == "__main__":
     ]
     result = infer(
         sentences,
-        model, tok, "cpu"
+        model, tok, "cpu", batch_size=2
     )
 
-    # --- convert to TokenList-s ---
-    token_lists = []
-
-    for words, feats_list in zip(sentences, result):
-        tokens: list[TokenList] = []
-        for word, feats in zip(words, feats_list):
-            token = Token(
-                form=word,
-                upos=feats["upos"],
-                feats={k: val for k, val in feats.items() if k != "upos"}, 
-            )
-            tokens.append(token)
-        token_list = TokenList(tokens)
-        token_list.metadata = {
-            "sent_id": uuid4(), "text": " ".join(words)
-        }
-        token_lists.append(token_list)
-
-    # --- print as conllu ---
-    for token_list in token_lists:
-        print(token_list.serialize(), end="\n")
-    
+    for token_list in result:
+        print(token_list.serialize())

@@ -14,7 +14,6 @@ from tqdm import tqdm
 from typing import cast
 
 
-
 def get_predictions_for_file(
     filename: Path,
     model: MorphologyClassifier,
@@ -60,7 +59,6 @@ def get_all_predictions_and_write_files(
     device: str,
 ) -> None:
 
-
     for pair in tqdm(test_files):
         all_preds = get_predictions_for_file(pair["path"], model, tokenizer, batch_size, device)
 
@@ -81,7 +79,7 @@ def main() -> None:
     parser.add_argument("--device")
 
     args = parser.parse_args()
-    
+
     DATA_PATH = "/mnt/data_storage/datasets/conllu/rubic_data-master"
     test_files_splits = get_train_dev_test_paths(DATA_PATH)["test"]
 

@@ -29,16 +29,16 @@ splits = get_train_dev_test_paths(DATA_PATH)
 def transform_features(features):
     new_features = deepcopy(features)
 
-    if features.get("Case") == "Par":  ## Equal in Russian, Gen2 more frequent in corpus
+    if features.get("Case") == "Par":  # Equal in Russian, Gen2 more frequent in corpus
         new_features["Case"] = "Gen2"
 
-    if features.get("Case") == "Nom1":  ## probably markup mistake
+    if features.get("Case") == "Nom1":  # probably markup mistake
         new_features["Case"] = "Nom"
 
-    if features.get("Voice") == "Act,Pass":  ## looked at the corpus, looks like its Mid in both cases (there are only 2)
+    if features.get("Voice") == "Act,Pass":  # looked at the corpus, looks like its Mid in both cases (there are only 2)
         new_features["Voice"] = "Mid"
 
-    if features.get("Clitic") == "Yes":  ## just 1 occurrence in whole corpus, can remove
+    if features.get("Clitic") == "Yes":  # just 1 occurrence in whole corpus, can remove
         del new_features["Clitic"]
 
     return new_features
@@ -47,7 +47,7 @@ def transform_features(features):
 class FeaturesExtractor(BaseConlluDataset):
 
     def _prepare_model_input(self, sentence):
-      for token in sentence:
+        for token in sentence:
             feats = transform_features(token['feats'] or dict())
             upos = token["upos"] or "X"
             if not (
@@ -56,7 +56,7 @@ class FeaturesExtractor(BaseConlluDataset):
                 (feats.get("Typo") == "Yes")
                 or
                 (feats.get("Anom") == "Yes")
-            ):                
+            ):
 
                 yield upos, feats
 
@@ -96,7 +96,7 @@ for upos, feats in upos2feats.items():
                 obs_vals[val] = 0
 
 
-## Define heuristics: 
+# Define heuristics:
 
 heuristics = defaultdict(lambda: defaultdict(str))
 warnings = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
@@ -105,7 +105,7 @@ for upos, feats in upos2feats.items():
     for feat, vals in feats.items():
         if any([count < FREQ_THR for count in vals.values()]):
 
-            if len(vals) < 3  :
+            if len(vals) < 3:
                 heuristics[upos][feat] = max(vals.keys(), key=lambda k: vals[k])
 
             else:

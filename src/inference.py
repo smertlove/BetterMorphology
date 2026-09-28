@@ -106,7 +106,7 @@ if __name__ == "__main__":
         }
         token_lists.append(token_list)
 
-    # --- print conllu files ---
+    # --- print as conllu ---
     for token_list in token_lists:
         print(token_list.serialize(), end="\n")
     

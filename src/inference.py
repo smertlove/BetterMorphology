@@ -5,6 +5,8 @@ from transformers import PreTrainedTokenizerFast, AutoTokenizer
 from typing import cast
 from itertools import batched
 import torch
+from conllu import TokenList, Token
+from uuid import uuid4
 
 
 @torch.no_grad()
@@ -64,6 +66,8 @@ def infer(
 
 
 if __name__ == "__main__":
+
+    # --- init model ---
     tok: PreTrainedTokenizerFast = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained("cointegrated/rubert-tiny2"))
     model = MorphologyClassifier(names_order=names_order, name2mapping_from_id=name2mapping_from_id, encoder_id="cointegrated/rubert-tiny2")
     state_dict = torch.load("./checkpoints/cpt_6/state_dict.pt")
@@ -72,10 +76,11 @@ if __name__ == "__main__":
         "pos+morphology",
 
     )
-    words = ["мама", "мыла", "раму",]
+
+    # --- test inference ---
     sentences = [
         ["мама", "мыла", "раму",],
-        ["люблю", "маму", "и", "раму"],
+        ["Люблю", "маму", "и", "раму"],
         "Глокая куздра штеко будланула бокра и курдячит бокрёнка".split()
     ]
     result = infer(
@@ -83,7 +88,25 @@ if __name__ == "__main__":
         model, tok, "cpu"
     )
 
-    for words, cur_res in zip(sentences, result):
-        for word, feats in zip(words, cur_res):
-            print(word, feats)
-        print()
+    # --- convert to TokenList-s ---
+    token_lists = []
+
+    for words, feats_list in zip(sentences, result):
+        tokens: list[TokenList] = []
+        for word, feats in zip(words, feats_list):
+            token = Token(
+                form=word,
+                upos=feats["upos"],
+                feats={k: val for k, val in feats.items() if k != "upos"}, 
+            )
+            tokens.append(token)
+        token_list = TokenList(tokens)
+        token_list.metadata = {
+            "sent_id": uuid4(), "text": " ".join(words)
+        }
+        token_lists.append(token_list)
+
+    # --- print conllu files ---
+    for token_list in token_lists:
+        print(token_list.serialize(), end="\n")
+    

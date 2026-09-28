@@ -6,7 +6,6 @@ from typing import cast
 from itertools import batched
 import torch
 from conllu import TokenList, Token
-from uuid import uuid4
 
 
 @torch.no_grad()
@@ -67,7 +66,7 @@ def infer(
                 token = Token(
                     form=word,
                     upos=feats["upos"],
-                    feats={k: val for k, val in feats.items() if k != "upos"}, 
+                    feats={k: val for k, val in feats.items() if k != "upos"},
                 )
                 tokens.append(token)
             token_list = TokenList(tokens)

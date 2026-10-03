@@ -7,12 +7,13 @@ from conllu import parse_incr
 from src.categories import names_order, UNDEFINED
 from pathlib import Path
 from collections import defaultdict
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix
 import json
 from tqdm import tqdm
 
 
 def get_all_golds_preds(gold: Path, pred: Path):
+
     assert pred.parent.name == gold.parent.parent.name
 
     all_golds: dict[str, list[str]]= defaultdict(list)
@@ -34,8 +35,6 @@ def get_all_golds_preds(gold: Path, pred: Path):
                     gold_feat = (gold_token['feats'] or dict()).get(name, UNDEFINED)
                     pred_feat = (pred_token['feats'] or dict()).get(name, UNDEFINED)
 
-                    if gold_feat == UNDEFINED and pred_feat == UNDEFINED:
-                        continue
                     all_golds[name].append(gold_feat)
                     all_preds[name].append(pred_feat)
 
@@ -46,7 +45,7 @@ def cmp_conllus(golds: list[Path], preds: list[Path]):
     all_golds: dict[str, list[str]]= defaultdict(list)
     all_preds: dict[str, list[str]]= defaultdict(list)
 
-    for gold, pred in tqdm(zip(golds, preds), total=len(golds)):
+    for gold, pred in tqdm(zip(golds, preds), total=len(golds), desc="Processing files..."):
         cur_golds, cur_preds = get_all_golds_preds(gold, pred)
         for name in names_order:
             all_golds[name].extend(cur_golds[name])
@@ -54,14 +53,18 @@ def cmp_conllus(golds: list[Path], preds: list[Path]):
 
     result = defaultdict(dict)
 
-    for name in names_order:
+    for name in tqdm(names_order, desc="Counting metrics..."):
+        assert len(all_golds[name]) == len(all_preds[name])
+        labels = sorted(set(all_golds[name]) | set(all_preds[name]))
+        result[name]["labels"] = labels
+        for average in ("micro", "macro", "weighted"):
         # TODO: s is always null, sth is probably wrong, needs fix
-        p, r, f1, s = precision_recall_fscore_support(all_golds[name], all_preds[name], average='weighted', zero_division=0)
-        result[name]["prec"] = p
-        result[name]["rec"] = r
-        result[name]["f1"] = f1
-        result[name]["support"] = s
-
+            p, r, f1, _ = precision_recall_fscore_support(all_golds[name], all_preds[name], average=average, zero_division=0)
+            result[name][f"{average}_prec"] = p
+            result[name][f"{average}_rec"] = r
+            result[name][f"{average}_f1"] = f1
+        result[name]["accuracy"] = accuracy_score(all_golds[name], all_preds[name])
+        result[name]["confusion_matrix"] = confusion_matrix(all_golds[name], all_preds[name], labels=labels).tolist()
     return result
 
 

@@ -71,7 +71,7 @@ def get_all_predictions_and_write_files(
 def main() -> None:
 
     parser = ArgumentParser()
-    parser.add_argument("--run_name")
+    parser.add_argument("--run-name")
     parser.add_argument("--tokenizer-path")
     parser.add_argument("--state-dict-path")
     parser.add_argument("--backbone-model-id")

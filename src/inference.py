@@ -38,7 +38,7 @@ def infer(
             [dict() for _ in range(len(sentence))]
             for sentence in batch
         ]
-        # TODO: fix this code, it looks ugly
+
         for i, word_ids in enumerate(all_word_ids):
             prev_id = None
             for j, word_id in enumerate(word_ids):
@@ -62,11 +62,18 @@ def infer(
         # --- Transform to conllu objects ---
         for words, feats_list in zip(batch, cur_feats):
             tokens: list[Token] = []
-            for word, feats in zip(words, feats_list):
+            for idx, (word, feats) in enumerate(zip(words, feats_list)):
                 token = Token(
+                    id=idx,
                     form=word,
+                    lemma=None,
                     upos=feats["upos"],
+                    xpos=None,
                     feats={k: val for k, val in feats.items() if k != "upos"},
+                    head=None,
+                    deprel=None,
+                    deps=None,
+                    misc=None,
                 )
                 tokens.append(token)
             token_list = TokenList(tokens)

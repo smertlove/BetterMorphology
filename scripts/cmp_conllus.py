@@ -7,12 +7,12 @@ from conllu import parse_incr
 from src.categories import names_order, UNDEFINED
 from pathlib import Path
 from collections import defaultdict
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix # type: ignore[import-untyped]
 import json
 from tqdm import tqdm
 
 
-def get_all_golds_preds(gold: Path, pred: Path):
+def get_all_golds_preds(gold: Path, pred: Path) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
 
     assert pred.parent.name == gold.parent.parent.name
 
@@ -41,7 +41,7 @@ def get_all_golds_preds(gold: Path, pred: Path):
     return all_golds, all_preds
 
 
-def cmp_conllus(golds: list[Path], preds: list[Path]):
+def cmp_conllus(golds: list[Path], preds: list[Path]) -> dict[str, dict[str, float | list[list[float]] | list[str]]]:
     all_golds: dict[str, list[str]]= defaultdict(list)
     all_preds: dict[str, list[str]]= defaultdict(list)
 
@@ -51,7 +51,7 @@ def cmp_conllus(golds: list[Path], preds: list[Path]):
             all_golds[name].extend(cur_golds[name])
             all_preds[name].extend(cur_preds[name])
 
-    result = defaultdict(dict)
+    result: dict[str, dict[str, float | list[list[float]] | list[str]]] = defaultdict(dict)
 
     for name in tqdm(names_order, desc="Counting metrics..."):
         assert len(all_golds[name]) == len(all_preds[name])

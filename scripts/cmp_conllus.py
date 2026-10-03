@@ -57,7 +57,6 @@ def cmp_conllus(golds: list[Path], preds: list[Path]) -> dict[str, dict[str, flo
         labels = sorted(set(all_golds[name]) | set(all_preds[name]))
         result[name]["labels"] = labels
         for average in ("micro", "macro", "weighted"):
-            # TODO: s is always null, sth is probably wrong, needs fix
             p, r, f1, _ = precision_recall_fscore_support(all_golds[name], all_preds[name], average=average, zero_division=0)
             result[name][f"{average}_prec"] = p
             result[name][f"{average}_rec"] = r

@@ -1,13 +1,11 @@
 from src.data_utils import get_train_dev_test_paths
-from src.categories import names_order
 from itertools import zip_longest
-
 from argparse import ArgumentParser
 from conllu import parse_incr
 from src.categories import names_order, UNDEFINED
 from pathlib import Path
 from collections import defaultdict
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix # type: ignore[import-untyped]
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score, confusion_matrix  # type: ignore[import-untyped]
 import json
 from tqdm import tqdm
 
@@ -16,11 +14,11 @@ def get_all_golds_preds(gold: Path, pred: Path) -> tuple[dict[str, list[str]], d
 
     assert pred.parent.name == gold.parent.parent.name
 
-    all_golds: dict[str, list[str]]= defaultdict(list)
-    all_preds: dict[str, list[str]]= defaultdict(list)
+    all_golds: dict[str, list[str]] = defaultdict(list)
+    all_preds: dict[str, list[str]] = defaultdict(list)
 
     with open(gold, "r", encoding="utf-8") as gold_file, open(pred, "r", encoding="utf-8") as pred_file:
-        
+
         for gold_sent, pred_sent in zip_longest(parse_incr(gold_file), parse_incr(pred_file)):
             assert gold_sent is not None and pred_sent is not None
             assert len(gold_sent) == len(pred_sent) and gold_sent.metadata["sent_id"] == pred_sent.metadata["sent_id"]
@@ -30,7 +28,8 @@ def get_all_golds_preds(gold: Path, pred: Path) -> tuple[dict[str, list[str]], d
                 all_preds['upos'].append(pred_token['upos'])
 
                 for name in names_order:
-                    if name == 'upos': continue
+                    if name == 'upos':
+                        continue
 
                     gold_feat = (gold_token['feats'] or dict()).get(name, UNDEFINED)
                     pred_feat = (pred_token['feats'] or dict()).get(name, UNDEFINED)
@@ -42,8 +41,8 @@ def get_all_golds_preds(gold: Path, pred: Path) -> tuple[dict[str, list[str]], d
 
 
 def cmp_conllus(golds: list[Path], preds: list[Path]) -> dict[str, dict[str, float | list[list[float]] | list[str]]]:
-    all_golds: dict[str, list[str]]= defaultdict(list)
-    all_preds: dict[str, list[str]]= defaultdict(list)
+    all_golds: dict[str, list[str]] = defaultdict(list)
+    all_preds: dict[str, list[str]] = defaultdict(list)
 
     for gold, pred in tqdm(zip(golds, preds), total=len(golds), desc="Processing files..."):
         cur_golds, cur_preds = get_all_golds_preds(gold, pred)
@@ -58,7 +57,7 @@ def cmp_conllus(golds: list[Path], preds: list[Path]) -> dict[str, dict[str, flo
         labels = sorted(set(all_golds[name]) | set(all_preds[name]))
         result[name]["labels"] = labels
         for average in ("micro", "macro", "weighted"):
-        # TODO: s is always null, sth is probably wrong, needs fix
+            # TODO: s is always null, sth is probably wrong, needs fix
             p, r, f1, _ = precision_recall_fscore_support(all_golds[name], all_preds[name], average=average, zero_division=0)
             result[name][f"{average}_prec"] = p
             result[name][f"{average}_rec"] = r
@@ -95,7 +94,6 @@ def main() -> None:
 
     with open(args.report_path, "w", encoding="utf-8") as file:
         json.dump(result, file, indent=4)
-
 
 
 if __name__ == "__main__":

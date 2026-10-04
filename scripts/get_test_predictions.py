@@ -83,7 +83,6 @@ def main() -> None:
     parser.add_argument(
         "--description",
         required=False,
-        help="Path to YAML/JSON file describing the experiment",
     )
     args = parser.parse_args()
     if not args.description:

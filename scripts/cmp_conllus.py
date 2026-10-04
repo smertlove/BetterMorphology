@@ -33,7 +33,9 @@ def get_all_golds_preds(gold: Path, pred: Path) -> tuple[dict[str, list[str]], d
 
                     gold_feat = (gold_token['feats'] or dict()).get(name, UNDEFINED)
                     pred_feat = (pred_token['feats'] or dict()).get(name, UNDEFINED)
-
+                    # assume we do not calculate unnecessary feats e.g. Aspect for NOUNs
+                    if gold_feat == pred_feat == UNDEFINED:
+                        continue
                     all_golds[name].append(gold_feat)
                     all_preds[name].append(pred_feat)
 
@@ -69,18 +71,25 @@ def main() -> None:
 
     parser = ArgumentParser()
     parser.add_argument("--run-name")
-    parser.add_argument("--report-path")
+    parser.add_argument("--reports-path", type=Path)
+    parser.add_argument("--runs-dir", type=Path)
+    parser.add_argument("--data-dir", type=Path)
 
     args = parser.parse_args()
 
-    DATA_PATH = "/mnt/data_storage/datasets/conllu/rubic_data-master"
-    test_files = [pair['path'] for pair in get_train_dev_test_paths(DATA_PATH)["test"]]
+    args.reports_path.mkdir(exist_ok=True)
+    report_name = args.reports_path / (args.run_name + ".json")
+    assert not report_name.exists(), f"Report already exists for {args.run_name}"
 
-    CURDIR = Path(__file__).parent.resolve()
-    run_dir = CURDIR / "data" / "runs" / args.run_name
+    data_dir = args.data_dir
+    test_files = [pair['path'] for pair in get_train_dev_test_paths(data_dir)["test"]]
+
+    run_dir = args.runs_dir / args.run_name
     assert run_dir.exists()
     run_files = []
     for folder in run_dir.iterdir():
+        if not folder.is_dir():
+            continue
         for file in folder.iterdir():
             run_files.append(file)
     assert len(test_files) == len(run_files)
@@ -90,7 +99,8 @@ def main() -> None:
         sorted(run_files),
     )
 
-    with open(args.report_path, "w", encoding="utf-8") as file:
+
+    with open(report_name, "w", encoding="utf-8") as file:
         json.dump(result, file, indent=4)
 
 

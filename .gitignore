@@ -219,3 +219,5 @@ __marimo__/
 
 # Custom project ignores
 data/
+reports/
+checkpoint*

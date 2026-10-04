@@ -12,6 +12,7 @@ from transformers import AutoTokenizer, PreTrainedTokenizerFast
 import torch
 from tqdm import tqdm
 from typing import cast
+import sys
 
 
 def get_predictions_for_file(
@@ -77,17 +78,29 @@ def main() -> None:
     parser.add_argument("--backbone-model-id")
     parser.add_argument("--batch-size", type=int)
     parser.add_argument("--device")
-
+    parser.add_argument("--runs-dir", type=Path)
+    parser.add_argument("--data-dir", type=Path)
+    parser.add_argument(
+        "--description",
+        required=False,
+        help="Path to YAML/JSON file describing the experiment",
+    )
     args = parser.parse_args()
+    if not args.description:
+        if sys.stdin.isatty():
+            args.description = input("Experiment description: ").strip()
+        if not args.description:
+            parser.error("--description is required (or run interactively)")
 
-    DATA_PATH = "/mnt/data_storage/datasets/conllu/rubic_data-master"
-    test_files_splits = get_train_dev_test_paths(DATA_PATH)["test"]
+    data_dir = args.data_dir
+    test_files_splits = get_train_dev_test_paths(data_dir)["test"]
 
-    CURDIR = Path(__file__).parent.resolve()
-
-    target_dir = CURDIR / "data" / "runs" / args.run_name
+    target_dir = args.runs_dir / args.run_name
     assert not target_dir.exists()
     target_dir.mkdir()
+
+    with open(target_dir / "README.md", "w", encoding="utf-8") as file:
+        file.write(args.description.strip() + "\n")
 
     tokenizer = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained(args.tokenizer_path))
     model = MorphologyClassifier(names_order, name2mapping_from_id, args.backbone_model_id)

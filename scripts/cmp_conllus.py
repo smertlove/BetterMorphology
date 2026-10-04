@@ -61,7 +61,6 @@ def cmp_conllus(golds: list[Path], preds: list[Path]) -> dict[str, dict[str, flo
             result[name][f"{average}_prec"] = p
             result[name][f"{average}_rec"] = r
             result[name][f"{average}_f1"] = f1
-        result[name]["accuracy"] = accuracy_score(all_golds[name], all_preds[name])
         result[name]["confusion_matrix"] = confusion_matrix(all_golds[name], all_preds[name], labels=labels).tolist()
     return result
 

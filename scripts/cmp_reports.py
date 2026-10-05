@@ -46,13 +46,14 @@ def main():
         with open(p, "r", encoding="utf-8") as file:
             all_reports.append(json.load(file))
 
-    result = compare_reports(*all_reports)
+    result = compare_reports(*all_reports, metric="weighted_f1")
 
     for cat, info in result.items():
         best = report_paths[info['best']].name
         print(f"{cat}: best = {best} ({info['score']:.4f})")
         for idx, score in info["ranking"]:
             print(f"    {report_paths[idx].name}: {score:.4f}")
+        print()
 
 
 if __name__ == "__main__":

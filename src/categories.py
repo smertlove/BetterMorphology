@@ -63,8 +63,8 @@ GENDER2ID, ID2GENDER = get_id_mappings(
 
 NUMBER2ID, ID2NUMBER = get_id_mappings(
     UNDEFINED,
-    "Count",   # not in GramEval2020
-    "Dual",   # not in GramEval2020
+    # "Count",   # not in GramEval2020; underrepresented, never predicted
+    # "Dual",   # not in GramEval2020; underrepresented, never predicted
     "Plur",
     "Sing",
 )
@@ -73,15 +73,15 @@ NUMBER2ID, ID2NUMBER = get_id_mappings(
 NAMETYPE2ID, ID2NAMETYPE = get_id_mappings(
     UNDEFINED,
     "Com",
-    "Evn",
+    # "Evn",  # underrepresented, never predicted
     "Geo",
     "Giv",
-    "Oth",
+    # "Oth",  # underrepresented, never predicted
     "Pat",
     "Pro",
     "Prs",
     "Sur",
-    "Zoo",
+    # "Zoo",  # underrepresented, never predicted
 )
 
 ASPECT2ID, ID2ASPECT = get_id_mappings(
@@ -94,15 +94,15 @@ MOOD2ID, ID2MOOD = get_id_mappings(
     UNDEFINED,
     "Cnd",
     "Imp",
-    "Imp2",   # not in GramEval2020
+    # "Imp2",   # not in GramEval2020; underrepresented, never predicted
     "Ind",
 )
 
 TENSE2ID, ID2TENSE = get_id_mappings(
     UNDEFINED,
-    "Aor",  # not in GramEval2020
+    # "Aor",  # not in GramEval2020; underrepresented, never predicted
     "Fut",
-    "Imp",   # not in GramEval2020
+    # "Imp",   # not in GramEval2020; underrepresented, never predicted
     "Past",
     "Pres",
 )
@@ -133,7 +133,7 @@ VOICE2ID, ID2VOICE = get_id_mappings(
 DEGREE2ID, ID2DEGREE = get_id_mappings(
     UNDEFINED,
     "Cmp",
-    "Cmp2",  # not in GramEval2020
+    "Cmp2",  # not in GramEval2020; underrepresented, predicted kinda poorly? sometimes hits though
     "Pos",
     "Sup",
 )
@@ -150,7 +150,7 @@ NUMFORM2ID, ID2NUMFORM = get_id_mappings(
     UNDEFINED,
     "Combi",
     "Digit",
-    "Roman",
+    "Roman",  # underrepresented, predicted well
     "Word",
 )
 
@@ -160,7 +160,7 @@ NUMTYPE2ID, ID2NUMTYPE = get_id_mappings(
     "Card",
     "Frac",
     "Ord",
-    "Sets",
+    "Sets",  # underrepresented, predicted well
 )
 
 VARIANT2ID, ID2VARIANT = get_id_mappings(
@@ -173,12 +173,12 @@ PRONTYPE2ID, ID2PRONTYPE = get_id_mappings(
     UNDEFINED,
     "Dem",
     "Emp",
-    "Exc",
+    # "Exc",  # not in GramEval2020; underrepresented, never predicted
     "Ind",
     "Int",
     "Neg",
     "Prs",
-    "Rcp",
+    "Rcp",  # underrepresented, predicted well
     "Rel",
     "Tot",
 )
@@ -197,7 +197,7 @@ POSS2ID, ID2POSS = get_id_mappings(
 # Whole category not in GramEval2020
 INFLCLASS2ID, ID2INFLCLASS = get_id_mappings(
     UNDEFINED,
-    "Ind",
+    "Ind",  # underrepresented, predicted kinda randomly? sometimes hits though
 )
 
 # Whole category not in GramEval2020
@@ -219,7 +219,7 @@ FOREIGN2ID, ID2FOREIGN = get_id_mappings(
 # Whole category not in GramEval2020
 HYPH2ID, ID2HYPH = get_id_mappings(
     UNDEFINED,
-    "Yes",
+    "Yes",  # underrepresented, predicted poorly
 )
 
 name2mapping_to_id = {

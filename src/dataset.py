@@ -149,7 +149,7 @@ def get_vector_from_features(feats: dict[str, str], ignore_this: bool = False) -
         for name in names_order:
             mapping = name2mapping_to_id[name]
             val = feats.get(name, UNDEFINED)
-            val_id = mapping[val]
+            val_id = mapping.get(val, IGNORE_INDEX)
             vector.append(val_id)
 
     return vector

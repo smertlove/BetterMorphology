@@ -22,6 +22,8 @@ def get_all_golds_preds(gold: Path, pred: Path) -> tuple[dict[str, list[str]], d
         for gold_sent, pred_sent in zip_longest(parse_incr(gold_file), parse_incr(pred_file)):
             assert gold_sent is not None and pred_sent is not None
             assert len(gold_sent) == len(pred_sent) and gold_sent.metadata["sent_id"] == pred_sent.metadata["sent_id"]
+            # Stanza doesnt allow to override its own ids, so use this and commnet prev assert when comparing Stanza runs
+            # assert len(gold_sent) == len(pred_sent)
 
             for gold_token, pred_token in zip(gold_sent, pred_sent):
                 all_golds['upos'].append(gold_token['upos'])

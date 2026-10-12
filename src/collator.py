@@ -92,7 +92,6 @@ class LemmatizationCollator:
             sample2uniq_id.append(cur_uniq_idx)
 
         # Now pad
-        # assert all(elem is not None for elem in uniq_input_ids_encoder)
         context_maxlen = max(
             len(cast(list[int], ids))
             for ids in uniq_input_ids_encoder

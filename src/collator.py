@@ -106,8 +106,8 @@ class LemmatizationCollator:
 
         padded_input_ids_decoder = _pad_sequence([sample["input_ids_decoder"] for sample in samples],
                                                  self.decoder_pad_token_id, decoder_input_maxlen, torch.long)
-        padded_token_type_ids_decoder = _pad_sequence([sample["token_type_ids_decoder"] for sample in samples],
-                                                      0, decoder_input_maxlen, torch.long)
+        # padded_token_type_ids_decoder = _pad_sequence([sample["token_type_ids_decoder"] for sample in samples],
+        #                                               0, decoder_input_maxlen, torch.long)
         padded_attention_mask_decoder = _pad_sequence([sample["attention_mask_decoder"] for sample in samples], 0, decoder_input_maxlen, torch.long)
 
         padded_labels = _pad_sequence([sample["labels"] for sample in samples], self.ignore_index_id, label_maxlen, torch.long)
@@ -120,7 +120,7 @@ class LemmatizationCollator:
             'token_type_ids_encoder': padded_uniq_token_type_ids_encoder,
             'attention_mask_encoder': padded_uniq_attention_mask_encoder,
             'input_ids_decoder': padded_input_ids_decoder,
-            'token_type_ids_decoder': padded_token_type_ids_decoder,
+            # 'token_type_ids_decoder': padded_token_type_ids_decoder,
             'attention_mask_decoder': padded_attention_mask_decoder,
         }
 

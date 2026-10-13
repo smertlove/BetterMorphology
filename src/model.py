@@ -1,4 +1,3 @@
-from .dataset import TaskDefinedBatch
 from torch import nn
 import torch
 from torch.nn.utils.rnn import pad_sequence
@@ -68,7 +67,7 @@ class MorphologyClassifier(nn.Module):
 
         self.multitask_loss = SumOfLosses([1/n_tasks for _ in range(n_tasks)])
 
-        self.decoder = AutoModel.from_pretrained(decoder_id)
+        self.decoder = GPT2LMHeadModel.from_pretrained(decoder_id)
         self.norm = Gemma4RMSNorm(self.encoder.config.hidden_size, with_scale=False)
         self.proj = torch.nn.Linear(self.encoder.config.hidden_size, self.decoder.config.hidden_size, bias=False)
 
@@ -126,6 +125,14 @@ class MorphologyClassifier(nn.Module):
 
         return result
 
+    def embed_decoder_tokens(self, input_ids, start=0):
+        word_embeds = self.decoder.transformer.wte(input_ids)       # [1, seq_len, 768]
+
+        position_ids = torch.arange(start, word_embeds.shape[1] + start, dtype=torch.long).unsqueeze(0)
+        pos_embeds = self.decoder.transformer.wpe(position_ids)     # [1, seq_len, 768]
+
+        return word_embeds + pos_embeds
+
     def _forward_lemmatization(
         self,
 
@@ -137,7 +144,7 @@ class MorphologyClassifier(nn.Module):
 
         # dont use these yet, we configure input first
         input_ids_decoder,
-        token_type_ids_decoder,
+        # token_type_ids_decoder,
         attention_mask_decoder,
 
         labels,
@@ -174,8 +181,62 @@ class MorphologyClassifier(nn.Module):
             m = cur_tokens.shape[0]
             batch_embeddings[i, :m] = cur_tokens
             slot_masks[i, :m]       = 1
+
+        # TODO: the following does not work :(
+        # probably need to also pass attn mask for labels
         
-        raise NotImplementedError
+        ctx_end_id  = 404  # [CTX_END]
+        wordform_embeddings = self.embed_decoder_tokens(
+            torch.cat(
+                [
+                    torch.full((B, 1), ctx_end_id),
+                    input_ids_decoder,
+                    labels,
+                ],
+                dim=1
+            ),
+            start=K,
+        )  # "[CTX_END] word_form_embeds labels_embeds"
+
+        full_prompt = torch.cat(
+            [
+                batch_embeddings,
+                wordform_embeddings
+            ],
+            dim=1
+        )  # "ctx_embeds [CTX_END] word_form_embeds labels_embeds"
+
+        lpad = full_prompt.shape[1] - labels.shape[1]
+
+        full_labels = torch.cat(
+            [
+                torch.full((B, lpad), -100),
+                labels,
+            ],
+            dim=1
+        )  # "[-100]*prompt_len labels"
+
+        full_attention_mask = torch.cat(
+            [
+            slot_masks,                                         
+            torch.ones(B, 1 + input_ids_decoder.shape[1] + labels.shape[1],
+                    dtype=slot_masks.dtype, device=slot_masks.device),
+            
+            ],
+            dim=1
+        )
+
+        print(full_labels.shape)
+        print(full_prompt.shape)
+        print(full_attention_mask.shape)
+
+        # TODO: full_decoder_input: full_decoder_input + labels
+        out = self.decoder(
+            inputs_embeds=full_prompt,
+            attention_mask=full_attention_mask,
+            labels=full_labels,
+        )
+        return out
 
     def forward(
         self,

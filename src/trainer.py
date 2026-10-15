@@ -155,7 +155,35 @@ class MultitaskTrainer:
             batch: TaskDefinedBatch,
             mode: LifecycleMode,
             device: torch.device | str = "cpu",
-        ) -> dict[str, float]: raise NotImplementedError
+        ) -> dict[str, float]:
+
+        batch.to(device)
+
+        # --- forward ---
+        if mode == LifecycleMode.TRAIN:
+            self.optimizer.zero_grad()
+            outputs = model(batch)
+        else:
+            with torch.no_grad():
+                outputs = model(batch)
+
+        loss = outputs["loss"]
+
+        # --- backward ---
+        if mode == LifecycleMode.TRAIN:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            self.optimizer.step()
+            if self.schedule_strategy == ScheduleStrategy.BATCH and self.scheduler is not None:
+                self.scheduler.step()
+
+        # --- update metric containers ---
+        ## TODO: add validation function and metrics
+
+        # --- loss report ---
+        result = {"loss": loss.detach().item()}
+
+        return result
 
     def _process_batch(
         self,
@@ -236,6 +264,7 @@ class MultitaskTrainer:
         all_metrics: list[dict[str, float]] = []
 
         # TODO: make this work properly
+        # TODOOOOOOOOOOOO: this doesnt work for lemmatization, should fix asap
         main_metric = "pos+morphology::" + main_metric
 
         for epoch in range(1, n_epochs + 1):

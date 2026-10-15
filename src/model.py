@@ -1,9 +1,10 @@
 from torch import nn
 import torch
 from torch.nn.utils.rnn import pad_sequence
-from transformers import AutoModel
+from transformers import AutoModel, GPT2LMHeadModel
 from typing import Any
 from pathlib import Path
+from .dataset import TaskDefinedBatch
 
 
 class SumOfLosses(nn.Module):
@@ -125,10 +126,10 @@ class MorphologyClassifier(nn.Module):
 
         return result
 
-    def embed_decoder_tokens(self, input_ids, start=0):
+    def _embed_decoder_tokens(self, input_ids, start=0):
         word_embeds = self.decoder.transformer.wte(input_ids)       # [1, seq_len, 768]
 
-        position_ids = torch.arange(start, word_embeds.shape[1] + start, dtype=torch.long).unsqueeze(0)
+        position_ids = torch.arange(start, word_embeds.shape[1] + start, dtype=torch.long, device=self.decoder.device).unsqueeze(0)
         pos_embeds = self.decoder.transformer.wpe(position_ids)     # [1, seq_len, 768]
 
         return word_embeds + pos_embeds
@@ -144,14 +145,13 @@ class MorphologyClassifier(nn.Module):
 
         # dont use these yet, we configure input first
         input_ids_decoder,
-        # token_type_ids_decoder,
         attention_mask_decoder,
 
         labels,
     ) -> dict[str, dict[str, torch.Tensor]]:
 
         # TODO: make this hyperparameter or hardcode 4
-        K = 1  # max num of ctx vectors, 1 for debug, should be 4
+        K = 3  # max num of ctx vectors, 1 for debug, should be 4
 
         # embed sentences first
         ctx_embeddings = self.encoder(
@@ -171,69 +171,50 @@ class MorphologyClassifier(nn.Module):
         # # e.g. tensor([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         #         #[0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         #         #[0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-        batch_embeddings = torch.zeros((B, K, D))
-        slot_masks       = torch.zeros((B, K), dtype=torch.long, device=ctx_embeddings.device)
+        pulled_ctx_embeddings = torch.zeros((B, K, D), device=self.decoder.device)
+        ctx_masks      = torch.zeros((B, K), dtype=torch.long, device=ctx_embeddings.device)
 
         for i, (ctx_id, mask) in enumerate(zip(sample2uniq_id, encoder_context_mask)):
-            cur_ctx    = ctx_embeddings[ctx_id]                         # [seqlen, D]
+
+            cur_ctx    = ctx_embeddings[ctx_id,:]                         # [seqlen, D]
             # TODO: use some sort of pooling; do not truncate when m_i > K
             cur_tokens = cur_ctx[mask.bool()][:K]                       # [min(m_i, K), D]
             m = cur_tokens.shape[0]
-            batch_embeddings[i, :m] = cur_tokens
-            slot_masks[i, :m]       = 1
+            pulled_ctx_embeddings[i, :m] = cur_tokens
+            ctx_masks[i, :m]       = 1
 
         # TODO: the following does not work :(
         # probably need to also pass attn mask for labels
-        
-        ctx_end_id  = 404  # [CTX_END]
-        wordform_embeddings = self.embed_decoder_tokens(
-            torch.cat(
-                [
-                    torch.full((B, 1), ctx_end_id),
-                    input_ids_decoder,
-                    labels,
-                ],
-                dim=1
-            ),
-            start=K,
-        )  # "[CTX_END] word_form_embeds labels_embeds"
 
-        full_prompt = torch.cat(
+        prompt_embeddings = self._embed_decoder_tokens(input_ids_decoder, start=K)
+
+        full_decoder_input = torch.cat(
             [
-                batch_embeddings,
-                wordform_embeddings
+                pulled_ctx_embeddings,
+                prompt_embeddings
             ],
             dim=1
-        )  # "ctx_embeds [CTX_END] word_form_embeds labels_embeds"
+        )  # "ctx_embeds word_form_embeds labels_embeds"
 
-        lpad = full_prompt.shape[1] - labels.shape[1]
-
-        full_labels = torch.cat(
+        full_decoder_attn_mask = torch.cat(
             [
-                torch.full((B, lpad), -100),
-                labels,
-            ],
-            dim=1
-        )  # "[-100]*prompt_len labels"
-
-        full_attention_mask = torch.cat(
-            [
-            slot_masks,                                         
-            torch.ones(B, 1 + input_ids_decoder.shape[1] + labels.shape[1],
-                    dtype=slot_masks.dtype, device=slot_masks.device),
-            
+                ctx_masks,
+                attention_mask_decoder,
             ],
             dim=1
         )
 
-        print(full_labels.shape)
-        print(full_prompt.shape)
-        print(full_attention_mask.shape)
+        full_labels = torch.cat(
+            [
+                torch.full((B, K), -100, device=self.decoder.device),  # -100 labels for ctx embeds 
+                labels,
+            ],
+            dim=1
+        )
 
-        # TODO: full_decoder_input: full_decoder_input + labels
         out = self.decoder(
-            inputs_embeds=full_prompt,
-            attention_mask=full_attention_mask,
+            inputs_embeds=full_decoder_input,
+            attention_mask=full_decoder_attn_mask,
             labels=full_labels,
         )
         return out

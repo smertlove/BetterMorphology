@@ -210,22 +210,38 @@ class LemmatizationDataset(BaseConlluDataset):
 
         for current_word_idx, token in enumerate(sentence):
 
+            if token["upos"] in {"PUNCT", "SYM"}:
+                continue
+
             context_mask = [1 if wid == current_word_idx else 0 for wid in encoder_word_ids]
 
-            decoder_input = self.decoder_tokenizer(
-                token['form'],
-                return_tensors=None,
+            prompt_ids = self.decoder_tokenizer.encode(
+                # "[CTX][CTX][CTX][CTX]"  # 4 slots for ctx vectors
+                # + token['form']         # tokenized word form
+                token['form']
             )
-            decoder_input = {k + "_decoder": val for k, val in decoder_input.items()}
+            prompt_labels = [IGNORE_INDEX] * len(prompt_ids)
 
-            labels = self.decoder_tokenizer.encode(token['lemma'])
+            lemma_ids = self.decoder_tokenizer.encode(token['lemma']) + [self.decoder_tokenizer.eos_token_id]
+            lemma_labels = deepcopy(lemma_ids)
 
-            # TODO: Add uuid4 to avoid embedding exact same sentence len(tokens) times
+            input_ids_decoder = prompt_ids + lemma_ids
+            if len(input_ids_decoder) > 90:
+                continue  # drop long samples to avoid OOM (Q0.9999), 217/2M train samples
+
+            attention_mask_decoder = [1] * len(input_ids_decoder)
+            labels = prompt_labels + lemma_labels
+                   
             yield TaskDefinedBatch(
                 task_name="lemmatization",
-                sentence_uuid=cur_uuid,
+
+                # decoder inputs
+                input_ids_decoder = input_ids_decoder,
+                attention_mask_decoder = attention_mask_decoder,
                 labels=labels,
+
+                # encoder inputs
+                sentence_uuid=cur_uuid,
                 encoder_context_mask=context_mask,
                 **encoder_input,  # same for every word in the sentence, pull contextualized vectors from here
-                **decoder_input,
             )

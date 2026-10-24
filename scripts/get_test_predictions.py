@@ -102,9 +102,16 @@ def main() -> None:
         file.write(args.description.strip() + "\n")
 
     tokenizer = cast(PreTrainedTokenizerFast, AutoTokenizer.from_pretrained(args.tokenizer_path))
-    model = MorphologyClassifier(names_order, name2mapping_from_id, args.backbone_model_id)
+    model = MorphologyClassifier(
+        names_order,
+        name2mapping_from_id,
+        args.backbone_model_id,
+        "/mnt/data_storage/models/morphology/gpt2_8-405_57m",  # TODO: сделать параметром в cli
+    )
+
     state_dict = torch.load(args.state_dict_path)
     model.load_state_dict(state_dict)
+
     model.to(args.device)
 
     get_all_predictions_and_write_files(

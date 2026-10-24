@@ -2,10 +2,13 @@ from .model import MorphologyClassifier
 from .dataset import TaskDefinedBatch
 from .categories import name2mapping_from_id, names_order, UNDEFINED
 from transformers import PreTrainedTokenizerFast, AutoTokenizer
-from typing import cast
+from typing import cast, Literal
 from itertools import batched
 import torch
 from conllu import TokenList, Token
+
+
+PoolStrategy = Literal["1st_tok", "mean"]  ## TODO: add mean pooling
 
 
 @torch.no_grad()
@@ -15,6 +18,7 @@ def infer(
     tokenizer: PreTrainedTokenizerFast,
     device: torch.device | str = "cpu",
     batch_size: int = 64,
+    strategy: PoolStrategy = "1st_tok"
 ) -> list[TokenList]:
 
     model.eval()

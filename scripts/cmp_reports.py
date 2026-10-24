@@ -55,6 +55,26 @@ def main():
             print(f"    {report_paths[idx].name}: {score:.4f}")
         print()
 
+    ## uncomment below to also write "cmp_result.tsv"
+
+    # models = []
+    # for info in result.values():
+    #     for idx, _ in info["ranking"]:
+    #         name = report_paths[idx].name
+    #         if name not in models:
+    #             models.append(name)
+
+    # with open("cmp_result.tsv", "w", encoding="utf-8") as file:
+    #     print("Category\tBest\t" + "\t".join(models), file=file)
+    #     for cat, info in result.items():
+    #         best = report_paths[info['best']].name
+    #         row = {report_paths[idx].name: score for idx, score in info["ranking"]}
+    #         cells = []
+    #         for m in models:
+    #             s = row.get(m)
+    #             cells.append(f"{s:.4f}" if s is not None else "")
+    #         print(f"{cat}\t{best}\t" + "\t".join(cells), file=file)
+
 
 if __name__ == "__main__":
     main()

@@ -265,7 +265,7 @@ class MultitaskTrainer:
 
         # TODO: make this work properly
         # TODOOOOOOOOOOOO: this doesnt work for lemmatization, should fix asap
-        main_metric = "pos+morphology::" + main_metric
+        # main_metric = "pos+morphology::" + main_metric
 
         for epoch in range(1, n_epochs + 1):
 
@@ -356,6 +356,7 @@ class MultitaskTrainer:
             collate_fn=collate_fn,
             worker_init_fn=worker_init_fn,
             num_workers=4,
+            # multiprocessing_context="spawn"
         )
 
         val_dataloader = DataLoader(
@@ -365,6 +366,7 @@ class MultitaskTrainer:
             collate_fn=collate_fn,
             worker_init_fn=worker_init_fn,
             num_workers=4,
+            # multiprocessing_context="spawn"
         )
 
         all_metrics = self._run_training_loop(

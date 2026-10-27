@@ -27,18 +27,18 @@ def seed_everything(seed: int = 42) -> None:
     torch.cuda.manual_seed_all(seed)  # for multi-GPU
 
     # PyTorch deterministic settings
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    # Enforce deterministic algorithms (PyTorch >= 1.8)
-    try:
-        torch.use_deterministic_algorithms(True, warn_only=True)
-    except AttributeError:
-        pass
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+    # # Enforce deterministic algorithms (PyTorch >= 1.8)
+    # try:
+    #     torch.use_deterministic_algorithms(True, warn_only=True)
+    # except AttributeError:
+    #     pass
     # Required for some CUDA ops (e.g. atomicAdd) in older PyTorch
-    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    # os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
     # Environment variables that affect some libraries
-    os.environ["TF_CUDNN_DETERMINISTIC"] = "1"  # TensorFlow (if used alongside)
+    # os.environ["TF_CUDNN_DETERMINISTIC"] = "1"  # TensorFlow (if used alongside)
 
 
 def worker_init_fn(worker_id: int) -> None:

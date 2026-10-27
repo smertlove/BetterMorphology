@@ -150,8 +150,8 @@ class MorphologyClassifier(nn.Module):
         labels,
     ) -> dict[str, dict[str, torch.Tensor]]:
 
-        # TODO: make this hyperparameter or hardcode 4
-        K = 3  # max num of ctx vectors, 1 for debug, should be 4
+        # # TODO: make this hyperparameter or hardcode 4
+        K = 4  # max num of ctx vectors, 1 for debug, should be 4
 
         # embed sentences first
         ctx_embeddings = self.encoder(
@@ -183,39 +183,15 @@ class MorphologyClassifier(nn.Module):
             pulled_ctx_embeddings[i, :m] = cur_tokens
             ctx_masks[i, :m]       = 1
 
-        # TODO: the following does not work :(
-        # probably need to also pass attn mask for labels
+        prompt_embeddings = self._embed_decoder_tokens(input_ids_decoder)
+        prompt_embeddings[:,:K] = pulled_ctx_embeddings  # add embeddings to slots 
 
-        prompt_embeddings = self._embed_decoder_tokens(input_ids_decoder, start=K)
-
-        full_decoder_input = torch.cat(
-            [
-                pulled_ctx_embeddings,
-                prompt_embeddings
-            ],
-            dim=1
-        )  # "ctx_embeds word_form_embeds labels_embeds"
-
-        full_decoder_attn_mask = torch.cat(
-            [
-                ctx_masks,
-                attention_mask_decoder,
-            ],
-            dim=1
-        )
-
-        full_labels = torch.cat(
-            [
-                torch.full((B, K), -100, device=self.decoder.device),  # -100 labels for ctx embeds 
-                labels,
-            ],
-            dim=1
-        )
+        attention_mask_decoder[:,:K] = ctx_masks  # mask empty slots
 
         out = self.decoder(
-            inputs_embeds=full_decoder_input,
-            attention_mask=full_decoder_attn_mask,
-            labels=full_labels,
+            inputs_embeds=prompt_embeddings,
+            attention_mask=attention_mask_decoder,
+            labels=labels,
         )
         return out
 

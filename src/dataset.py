@@ -216,9 +216,10 @@ class LemmatizationDataset(BaseConlluDataset):
             context_mask = [1 if wid == current_word_idx else 0 for wid in encoder_word_ids]
 
             prompt_ids = self.decoder_tokenizer.encode(
-                # "[CTX][CTX][CTX][CTX]"  # 4 slots for ctx vectors
-                # + token['form']         # tokenized word form
-                token['form']
+                "[CTX][CTX][CTX][CTX]"  # 4 slots for ctx vectors
+                + token['form']         # tokenized word form
+                + "[LEMMA]",             # lemma separator
+                add_special_tokens=False
             )
             prompt_labels = [IGNORE_INDEX] * len(prompt_ids)
 

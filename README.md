@@ -9,6 +9,21 @@ mypy --strict --python-executable .venv/bin/python src/
 flake8 --max-line-length=148 src/
 ```
 
+## Training
+```bash
+uv run -m scripts.train_morphology \
+    --data_path /mnt/data_storage/datasets/conllu/rubic_data-master \
+    --checkpoint_dir ./ckpt/ruberttiny2_morphology \
+    --encoder_id cointegrated/rubert-tiny2 \
+    --decoder_id /mnt/data_storage/models/morphology/pretrained_lemmatizers/gpt2_4-406_28m_pretrained \
+    --batch_size 128 \
+    --n_epochs 20 \
+    --lr 1e-4 \
+    --unfreeze_backbone_after 3 \
+    --main_metric pos+morphology::loss \
+    --seed 42 
+```
+
 
 ## Testing
 

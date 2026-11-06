@@ -106,7 +106,7 @@ def main() -> None:
         names_order,
         name2mapping_from_id,
         args.backbone_model_id,
-        "/mnt/data_storage/models/morphology/gpt2_8-405_57m",  # TODO: сделать параметром в cli
+        "/mnt/data_storage/models/morphology/pretrained_lemmatizers/gpt2_4-406_28m_pretrained",  # TODO: сделать параметром в cli
     )
 
     state_dict = torch.load(args.state_dict_path)

@@ -2,6 +2,9 @@ import os
 import random
 import numpy as np
 import torch
+from argparse import Namespace
+from pathlib import Path
+import json
 
 
 # NOTE: Vibecoded with love and https://chat.deepseek.com/
@@ -49,3 +52,8 @@ def worker_init_fn(worker_id: int) -> None:
     worker_seed = torch.initial_seed() % 2**32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
+
+
+def save_args(args: Namespace, save_path:str|Path):
+    with open(save_path, 'w') as f:
+        json.dump(args.__dict__, f, indent=2)

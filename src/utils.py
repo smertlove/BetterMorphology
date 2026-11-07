@@ -54,6 +54,6 @@ def worker_init_fn(worker_id: int) -> None:
     random.seed(worker_seed)
 
 
-def save_args(args: Namespace, save_path:str|Path):
+def save_args(args: Namespace, save_path:str|Path) -> None:
     with open(save_path, 'w') as f:
         json.dump(args.__dict__, f, indent=2)

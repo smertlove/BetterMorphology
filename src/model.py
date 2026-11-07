@@ -28,7 +28,7 @@ class Gemma4RMSNorm(nn.Module):
         if self.with_scale:
             self.weight = nn.Parameter(torch.ones(dim), requires_grad=True)
 
-    def _norm(self, hidden_states: torch.Tensor):
+    def _norm(self, hidden_states: torch.Tensor) -> torch.Tensor:
         mean_squared = hidden_states.pow(2).mean(-1, keepdim=True) + self.eps
         # Use torch.pow() (over torch.sqrt() or torch.rsqrt()) to address compiler differences between Torch and JAX
         return hidden_states * torch.pow(mean_squared, -0.5)
@@ -126,29 +126,29 @@ class MorphologyClassifier(nn.Module):
 
         return result
 
-    def _embed_decoder_tokens(self, input_ids, start=0):
-        word_embeds = self.decoder.transformer.wte(input_ids)       # [1, seq_len, 768]
+    def _embed_decoder_tokens(self, input_ids: torch.Tensor, start: int = 0) -> torch.Tensor:
+        word_embeds: torch.Tensor = self.decoder.transformer.wte(input_ids)       # [1, seq_len, 768]
 
         position_ids = torch.arange(start, word_embeds.shape[1] + start, dtype=torch.long, device=self.decoder.device).unsqueeze(0)
-        pos_embeds = self.decoder.transformer.wpe(position_ids)     # [1, seq_len, 768]
+        pos_embeds: torch.Tensor = self.decoder.transformer.wpe(position_ids)     # [1, seq_len, 768]
 
         return word_embeds + pos_embeds
 
     def _forward_lemmatization(
         self,
 
-        encoder_context_mask,
-        sample2uniq_id,
-        input_ids_encoder,
-        token_type_ids_encoder,
-        attention_mask_encoder,
+        encoder_context_mask: torch.Tensor,
+        sample2uniq_id: torch.Tensor,
+        input_ids_encoder: torch.Tensor,
+        token_type_ids_encoder: torch.Tensor,
+        attention_mask_encoder: torch.Tensor,
 
         # dont use these yet, we configure input first
-        input_ids_decoder,
-        attention_mask_decoder,
+        input_ids_decoder: torch.Tensor,
+        attention_mask_decoder: torch.Tensor,
 
-        labels,
-    ) -> dict[str, dict[str, torch.Tensor]]:
+        labels: torch.Tensor,
+    ) -> dict[str, torch.Tensor]:
 
         # # TODO: make this hyperparameter or hardcode 4
         K = 4  # max num of ctx vectors, 1 for debug, should be 4
@@ -188,7 +188,7 @@ class MorphologyClassifier(nn.Module):
 
         attention_mask_decoder[:,:K] = ctx_masks  # mask empty slots
 
-        out = self.decoder(
+        out:  dict[str, torch.Tensor] = self.decoder(
             inputs_embeds=prompt_embeddings,
             attention_mask=attention_mask_decoder,
             labels=labels,
@@ -198,7 +198,7 @@ class MorphologyClassifier(nn.Module):
     def forward(
         self,
         task_defined_batch: TaskDefinedBatch,
-    ) -> dict[str, dict[str, torch.Tensor]]:
+    ) -> dict[str, dict[str, torch.Tensor]] | dict[str, torch.Tensor]:
         if task_defined_batch.task_name == "pos+morphology":
             return self._forward_morphology(**task_defined_batch)
         elif task_defined_batch.task_name == "lemmatization":

@@ -57,7 +57,6 @@ def main():
     collator = LemmatizationCollator(encoder_tokenizer.pad_token_id, decoder_tokenizer.pad_token_id, -100)
 
     model = MorphologyClassifier(names_order, name2mapping_from_id, args.encoder_id, args.decoder_id)
-    state_dict = torch.load("/home/kirill/sandbox/BetterMorphology/ckpt/ruberttiny2_ctx_lemmatization/cpt_19/state_dict.pt")
 
     state_dict = torch.load(args.state_dict)
     model.load_state_dict(state_dict)

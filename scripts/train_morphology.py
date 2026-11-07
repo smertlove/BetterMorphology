@@ -52,13 +52,13 @@ def main():
     train_dataset = PosAndMorphologyDataset(splits["train"], encoder_tokenizer, decoder_tokenizer, debug_fit=False)
     val_dataset = PosAndMorphologyDataset(splits["dev"], encoder_tokenizer, decoder_tokenizer, debug_fit=False)
 
-    collator = PosAndMorphologyCollator(encoder_tokenizer.pad_token_type_id, -100)
+    collator = PosAndMorphologyCollator(encoder_tokenizer.pad_token_id, -100)
 
     model = MorphologyClassifier(names_order, name2mapping_from_id, args.encoder_id, args.decoder_id)
     model.train_backbone(False)  # freeze backbone for the beginning
 
 
-    optimizer = AdamW(model.parameters(), lr=1e-4)
+    optimizer = AdamW(model.parameters(), lr=args.lr)
     num_training_steps = args.estimated_train_size // args.batch_size * args.n_epochs
     scheduler = get_linear_schedule_with_warmup(
         optimizer,

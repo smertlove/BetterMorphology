@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from .dataset import TaskDefinedBatch
-from .model import MorphologyClassifier
+from .morphology_model import MorphologyClassifier
 from typing import Callable
 from pathlib import Path
 from sklearn.metrics import f1_score, precision_score, recall_score  # type: ignore

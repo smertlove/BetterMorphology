@@ -5,7 +5,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from transformers import AutoTokenizer
 from transformers import get_linear_schedule_with_warmup
 from src.categories import names_order, name2mapping_from_id
-from src.model import MorphologyClassifier
+from src.morphology_model import MorphologyClassifier
 from src.utils import seed_everything, worker_init_fn, save_args
 from src.trainer import MultitaskTrainer, ScheduleStrategy
 from src.collator import LemmatizationCollator

@@ -27,6 +27,20 @@ uv run -m scripts.train_morphology \
 ```bash
 uv run -m scripts.train_ctx_lemmatization \
     --data_path /mnt/data_storage/datasets/conllu/rubic_data-master \
+    --checkpoint_dir ./ckpt/ruberttiny2_ctx_lemmatization_8\
+    --encoder_id cointegrated/rubert-tiny2 \
+    --decoder_id /mnt/data_storage/models/morphology/pretrained_lemmatizers/gpt2_8-406_57m_pretrained \
+    --state_dict ckpt/ruberttiny2_morphology/cpt_8/state_dict.pt
+    --batch_size 128 \
+    --n_epochs 20 \
+    --lr 1e-6 \
+    --main_metric lemmatization::loss \
+    --seed 42 
+```
+
+```bash
+uv run -m scripts.train_ctx_lemmatization \
+    --data_path /mnt/data_storage/datasets/conllu/rubic_data-master \
     --checkpoint_dir ./ckpt/ruberttiny2_ctx_lemmatization\
     --encoder_id cointegrated/rubert-tiny2 \
     --decoder_id /mnt/data_storage/models/morphology/pretrained_lemmatizers/gpt2_4-406_28m_pretrained \

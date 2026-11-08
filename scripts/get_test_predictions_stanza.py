@@ -1,5 +1,5 @@
 from src.data_utils import get_train_dev_test_paths
-from src.model import MorphologyClassifier
+from src.morphology_model import MorphologyClassifier
 from src.inference import infer
 from src.categories import names_order, name2mapping_from_id
 from src.data_utils import SubsetAndPath

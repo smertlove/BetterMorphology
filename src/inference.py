@@ -1,4 +1,4 @@
-from .model import MorphologyClassifier
+from .morphology_model import MorphologyClassifier
 from .dataset import TaskDefinedBatch
 from .categories import name2mapping_from_id, names_order, UNDEFINED
 from transformers import PreTrainedTokenizerFast, AutoTokenizer

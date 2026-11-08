@@ -1,3 +1,5 @@
+# type: ignore
+
 from src.data_utils import get_train_dev_test_paths
 from src.morphology_model import MorphologyClassifier
 from src.inference import infer

@@ -2,7 +2,7 @@ import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, TokenizersBackend
 from transformers import get_linear_schedule_with_warmup
 from src.categories import names_order, name2mapping_from_id
 from src.morphology_model import MorphologyClassifier
@@ -14,9 +14,10 @@ from src.data_utils import get_train_dev_test_paths
 from torch.optim import AdamW
 import torch
 from argparse import ArgumentParser
+from typing import cast
 
 
-def main():
+def main() -> None:
 
     parser = ArgumentParser()
 
@@ -48,8 +49,8 @@ def main():
 
     splits = get_train_dev_test_paths(args.data_path)
 
-    encoder_tokenizer = AutoTokenizer.from_pretrained(args.encoder_id)
-    decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_id)
+    encoder_tokenizer = cast(TokenizersBackend, AutoTokenizer.from_pretrained(args.encoder_id))
+    decoder_tokenizer = cast(TokenizersBackend, AutoTokenizer.from_pretrained(args.decoder_id))
 
     train_dataset = LemmatizationDataset(splits["train"], encoder_tokenizer, decoder_tokenizer, debug_fit=False)
     val_dataset = LemmatizationDataset(splits["dev"], encoder_tokenizer, decoder_tokenizer, debug_fit=False)

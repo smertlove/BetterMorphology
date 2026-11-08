@@ -1,21 +1,21 @@
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, TokenizersBackend
 from transformers import get_linear_schedule_with_warmup
 from src.categories import names_order, name2mapping_from_id
 from src.morphology_model import MorphologyClassifier
 from src.utils import seed_everything, worker_init_fn, save_args
 from src.trainer import MultitaskTrainer, ScheduleStrategy
 from src.collator import PosAndMorphologyCollator
-from src.dataset import *
+from src.dataset import PosAndMorphologyDataset
 from src.data_utils import get_train_dev_test_paths
 from torch.optim import AdamW
 from argparse import ArgumentParser
+from typing import cast
 
 
-def main():
+def main() -> None:
 
     parser = ArgumentParser()
 
@@ -46,11 +46,20 @@ def main():
 
     splits = get_train_dev_test_paths(args.data_path)
 
-    encoder_tokenizer = AutoTokenizer.from_pretrained(args.encoder_id)
-    decoder_tokenizer = AutoTokenizer.from_pretrained(args.decoder_id)
+    encoder_tokenizer = cast(TokenizersBackend, AutoTokenizer.from_pretrained(args.encoder_id))
 
-    train_dataset = PosAndMorphologyDataset(splits["train"], encoder_tokenizer, decoder_tokenizer, debug_fit=False)
-    val_dataset = PosAndMorphologyDataset(splits["dev"], encoder_tokenizer, decoder_tokenizer, debug_fit=False)
+    train_dataset = PosAndMorphologyDataset(
+        splits["train"],
+        encoder_tokenizer,
+        encoder_tokenizer,  # placeholder to satisfy mypy, wont be used
+        debug_fit=False
+    )
+    val_dataset = PosAndMorphologyDataset(
+        splits["dev"],
+        encoder_tokenizer,
+        encoder_tokenizer,  # placeholder to satisfy mypy, wont be used
+        debug_fit=False
+    )
 
     collator = PosAndMorphologyCollator(encoder_tokenizer.pad_token_id, -100)
 
@@ -60,7 +69,7 @@ def main():
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
     num_training_steps = args.estimated_train_size // args.batch_size * args.n_epochs
-    scheduler = get_linear_schedule_with_warmup(
+    scheduler = get_linear_schedule_with_warmup(  # type: ignore[no-untyped-call]
         optimizer,
         num_warmup_steps=int(0.1 * num_training_steps),  # 10% warmup
         num_training_steps=num_training_steps,

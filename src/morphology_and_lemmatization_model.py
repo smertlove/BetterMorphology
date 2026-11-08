@@ -5,6 +5,7 @@ from transformers import AutoModel, GPT2LMHeadModel
 from typing import Any
 from pathlib import Path
 from .dataset import TaskDefinedBatch
+from .morphology_model import MorphologyClassifier
 
 
 # from transformers.models.gemma4.modeling_gemma4
@@ -38,11 +39,18 @@ class MorphologyAndLemmatization(nn.Module):
         *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self.morphology_classifier = torch.load(morphology_classifier_path, weights_only=False)
+        self.morphology_classifier: MorphologyClassifier = torch.load(morphology_classifier_path, weights_only=False)
 
         self.decoder = GPT2LMHeadModel.from_pretrained(decoder_id)
-        self.norm = Gemma4RMSNorm(self.encoder.config.hidden_size, with_scale=False)
-        self.proj = torch.nn.Linear(self.encoder.config.hidden_size, self.decoder.config.hidden_size, bias=False)
+        self.norm = Gemma4RMSNorm(
+            self.morphology_classifier.encoder.config.hidden_size,
+            with_scale=False
+        )
+        self.proj = torch.nn.Linear(
+            self.morphology_classifier.encoder.config.hidden_size,
+            self.decoder.config.hidden_size,
+            bias=False
+        )
 
 
     def _embed_decoder_tokens(self, input_ids: torch.Tensor, start: int = 0) -> torch.Tensor:
@@ -73,7 +81,7 @@ class MorphologyAndLemmatization(nn.Module):
         K = 4  # max num of ctx vectors, 1 for debug, should be 4
 
         # embed sentences first
-        ctx_embeddings = self.encoder(
+        ctx_embeddings = self.morphology_classifier.encoder(
             input_ids=input_ids_encoder,
             token_type_ids=token_type_ids_encoder,
             attention_mask=attention_mask_encoder
@@ -119,14 +127,14 @@ class MorphologyAndLemmatization(nn.Module):
         task_defined_batch: TaskDefinedBatch,
     ) -> dict[str, dict[str, torch.Tensor]] | dict[str, torch.Tensor]:
         if task_defined_batch.task_name == "pos+morphology":
-            return self.morphology_classifier._forward_morphology(task_defined_batch)
+            return self.morphology_classifier.forward(task_defined_batch)
         elif task_defined_batch.task_name == "lemmatization":
             return self._forward_lemmatization(**task_defined_batch)
         else:
             raise ValueError(f"Unknown task {task_defined_batch.task_name}")
 
     def train_backbone(self, flg: bool) -> None:
-        for param in self.encoder.parameters():
+        for param in self.morphology_classifier.encoder.parameters():
             param.requires_grad = flg
 
     def save(self, path: str | Path) -> None:

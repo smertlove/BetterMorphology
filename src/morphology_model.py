@@ -25,8 +25,8 @@ class MorphologyClassifier(nn.Module):
         names_order: tuple[str, ...],
         name2mapping_from_id: dict[str, dict[int, str]],
         encoder_id: str,
-        decoder_id: str,
-        *args: Any, **kwargs: Any):
+        *args: Any, **kwargs: Any
+    ):
         super().__init__(*args, **kwargs)
 
         self.names_order = names_order
@@ -101,13 +101,6 @@ class MorphologyClassifier(nn.Module):
 
         return result
 
-    def _embed_decoder_tokens(self, input_ids: torch.Tensor, start: int = 0) -> torch.Tensor:
-        word_embeds: torch.Tensor = self.decoder.transformer.wte(input_ids)       # [1, seq_len, 768]
-
-        position_ids = torch.arange(start, word_embeds.shape[1] + start, dtype=torch.long, device=self.decoder.device).unsqueeze(0)
-        pos_embeds: torch.Tensor = self.decoder.transformer.wpe(position_ids)     # [1, seq_len, 768]
-
-        return word_embeds + pos_embeds
 
     def forward(
         self,
